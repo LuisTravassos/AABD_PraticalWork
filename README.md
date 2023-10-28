@@ -1,28 +1,28 @@
-Trabalho Prático de Arquitetura e Administração de Bases de Dados
+Practical Work in Database Architecture and Administration
 
-Este repositório contém o trabalho prático da unidade curricular de Arquitetura e Administração de Bases de Dados, parte integrante da licenciatura em Engenharia Informática, ramo de Sistemas de Informação, do Instituto Superior de Engenharia de Coimbra.
-Objetivos
+This repository contains the practical work of the course in Database Architecture and Administration, which is part of the Computer Engineering degree, Information Systems branch, at the Superior Institute of Engineering of Coimbra.
+Objectives
 
-O objetivo deste trabalho é proporcionar aos alunos a oportunidade de projetar e implementar uma base de dados relacional utilizando o Sistema de Gerenciamento de Banco de Dados (SGBD) Oracle. Este projeto visa aplicar os conhecimentos adquiridos ao longo das aulas, estimulando as capacidades de pesquisa e trabalho autônomo.
+The aim of this assignment is to provide students with the opportunity to design and implement a relational database using the Oracle Database Management System (DBMS). This project aims to apply the knowledge acquired throughout the classes, stimulating research capabilities and independent work.
 
-Embora o enunciado descreva um sistema completo em uma arquitetura cliente/servidor, o foco dos alunos será na implementação da componente servidor. A interface com o usuário não é exigida para este trabalho.
-Avaliação
+While the assignment describes a complete system in a client/server architecture, the focus for students will be on implementing the server component. User interface implementation is not required for this assignment.
+Evaluation
 
-A avaliação do trabalho será baseada em critérios como legibilidade, completude e eficiência das soluções propostas. Estes aspectos terão um peso significativo na avaliação final.
-Descrição do Sistema a Implementar
+The assessment of this work will be based on criteria such as readability, completeness, and efficiency of the proposed solutions. These aspects will carry significant weight in the final evaluation.
+Description of the System to Implement
 
-O sistema a ser implementado compreende uma base de dados relacional utilizando o SGBD Oracle. Embora o enunciado descreva um sistema completo em uma arquitetura cliente/servidor, os alunos se concentrarão na implementação da componente servidor.
-Entrega de Elementos
+The system to be implemented encompasses a relational database using the Oracle DBMS. Although the assignment describes a complete system in a client/server architecture, students will focus on implementing the server component.
+Submission of Elements
 
-Os seguintes elementos devem ser produzidos e entregues como parte do trabalho:
+The following elements should be produced and submitted as part of the assignment:
 
-    Código Fonte: O código fonte do projeto, organizado de forma clara e comentado.
-    Documentação: Qualquer documentação adicional necessária para entender e executar o projeto.
-    Instruções de Execução: Instruções claras sobre como executar o projeto, incluindo a configuração do ambiente e a inicialização do SGBD Oracle.
+    Source Code: The project's source code, organized in a clear and commented manner.
+    Documentation: Any additional documentation necessary to understand and execute the project.
+    Execution Instructions: Clear instructions on how to run the project, including environment setup and Oracle DBMS initialization.
 
-Como Contribuir
+How to Contribute
 
-Contribuições são bem-vindas! Se você encontrar bugs, melhorias ou deseja adicionar novos recursos, sinta-se à vontade para abrir uma issue ou criar um pull request.
-Licença
+Contributions are welcome! If you encounter bugs, have suggestions for improvements, or wish to add new features, feel free to open an issue or create a pull request.
+License
 
-Este projeto está sob a licença MIT.
+This project is under the MIT License.
