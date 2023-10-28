@@ -1,0 +1,27 @@
+Rodrigo Ferreira, nº2021139149:
+
+	Group By:
+	-> agrupar as ligações por ID do cliente e retornar informações como o número total de chamadas_voz e SMS enviados, a duração total e média das chamadas_voz e o numero de destinos diferentes que o cliente ligou;
+
+	Select Encadeado: 
+	-> atraves do select encadeado obter uma lista de contratos pre-pagos feitos no ultimo mes e depois agrupar os contratos por ID do cliente, retornando o numero total de contratos feitos;
+
+
+
+Luís Travassos, nº2021136600:
+
+	Group by:
+	-> uma vista para obter quais dois números de telefone mais trocaram chamadas e SMS;
+	
+	Select Encadeado:
+	-> uma vista que mostre os clientes que mais pagam na totalidade dos seus contratos;
+
+
+
+Pedro Pontes, nº2021142527:
+	
+	Group by:
+	-> agrupar os planos por designação e descobrir qual os planos mais populares;
+
+	Select Encadeado:
+	-> atraves de do select encadeado, obter uma lista dos pacotes e depois agrupar esses pacotes por numero de telefone para saber quantos numeros estão associados a cada pacote;

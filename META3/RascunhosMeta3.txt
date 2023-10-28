@@ -1,0 +1,86 @@
+create or replace trigger atualiza_saldo
+  after insert on eventos
+  for each row
+declare
+  cursor c1 is
+    select
+      ct.id_contrato as ctID,
+      ch.tipo as chTipo,
+      ta.ID_TARIFARIO as taID,
+      ta.tipo as taTipo,
+      nt.MIN_GASTOS as ntMin,
+      nt.SMS_GASTOS as ntSms,
+      nt.saldo as ntSaldo,
+      pps.NOME as ppsNome,
+      pps.ID_PLANO as ppsId,
+      pps.estado as ppsEstado,
+      pps.VALOR_SERVICO as ppsValSer,
+      carr.data_carreg as carrData,
+      carr.valor as carrValor
+    from eventos ev
+      join chamada ch on ev.id_chamada = ch.id_chamada
+      left join carregamento carr on ch.numero = carr.numero
+      join num_telefone nt on ch.numero = nt.numero
+      join contrato ct on nt.numero = ct.numero
+      join tarifario ta on ct.id_tarifario = ta.id_tarifario
+      left join associado ass on ct.id_contrato = ass.id_contrato
+      left join plano_pospago_simples pps on ass.id_plano = pps.id_plano
+      join aplicavel ap on ta.id_tarifario = ap.id_tarifario
+      and pps.id_plano = ap.id_plano
+    where
+      upper(ev.estado) = 'CHAMADA TERMINADA'
+      and ct.valido = 1
+      and ta.estado = 1
+      and estado = 1
+      and ev.id_evento = :new.id_evento;
+      
+  dados boolean := false;
+  total number := 0; 
+  preTime number;
+  planosMin number;
+  planosSms number;
+  
+begin
+
+if (upper(:new.estado) = 'CHAMADA TERMINADA') then
+  for i in c1 loop
+    dados := true;
+
+    if not (upper(i.taTipo) = upper(i.chTipo)) then 
+      raise_application_error(-20531, 'Contrato: '|| i.ctID || ' nao possui um tarifario compativel com a chamada');
+    end if;
+
+    if(INSTR(i.ppsNome, 'PP ')>0) then
+      select minutos, sms, numero_dias
+      into planosMin, planosSms, preTime
+      from PLANO_PREPAGO
+      where id_plano = i.ppsId;
+
+      if ((sysdate-i.carrData < preTime) 
+        AND (i.ppsValSer <= i.carrValor) 
+        AND ((NVL(planosMin, 99999) > i.ntMin) or (NVL(planosSms,99999) > i.ntSms))) then
+          total := 0; -- i.ppsValSer;
+        
+      else
+      
+        if (i.ntSaldo >= i.ppsValSer) then
+          total := i.ppsValSer;
+        else
+          total := 0; --Fatura
+        end if;
+      end if;
+    end if;
+     
+  end loop;
+  
+  if (dados = false) then
+    raise_application_error(-20599, 'Cursor não retornou nada');
+  end if;
+  
+  --return total;
+  update num_telefone
+  set saldo = saldo - total
+  where numero = i.
+  
+end;
+/

@@ -1,0 +1,519 @@
+--------------------------------------------------------
+--  File created - Domingo-Abril-23-2023   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for View VIEW_A
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_A" ("N_CONTRATO", "DATA_CONTRATO", "N_TELEFONE", "Quantidade de Chamadas", "QuantSMS_Enviados", "DURACAO_CHAMADAS") AS 
+  SELECT 
+    c.ID_CONTRATO AS N_Contrato,
+    c.DATA_INICIO AS Data_Contrato,
+    nt.NUMERO AS N_telefone,
+    COUNT(DISTINCT cv.id_chamada) AS "Quantidade de Chamadas",
+    COUNT(DISTINCT s.id_chamada) AS "QuantSMS_Enviados",
+    SUM(EXTRACT(hour FROM (cv.DATA_FIM - cv.DATA_INICIO))) AS Duracao_Chamadas
+  
+FROM  
+    CONTRATO c
+    left JOIN NUM_TELEFONE nt ON c.NUMERO = nt.NUMERO
+    JOIN CHAMADA ch ON nt.NUMERO = ch.NUMERO
+    JOIN CHAMADA_VOZ cv ON ch.ID_CHAMADA = cv.ID_CHAMADA
+    LEFT JOIN SMS s ON ch.ID_CHAMADA = s.ID_CHAMADA
+WHERE 
+    c.DATA_INICIO BETWEEN ADD_MONTHS(SYSDATE, -12) AND ADD_MONTHS(SYSDATE, -12) + 30
+GROUP BY
+    c.ID_CONTRATO, c.DATA_INICIO, nt.NUMERO
+HAVING
+       COUNT(DISTINCT cv.id_chamada) >= 
+        (SELECT TRUNC(AVG(chamadas_por_telefone), 1)
+        FROM (
+            SELECT COUNT(DISTINCT cv.id_chamada) AS chamadas_por_telefone
+            FROM chamada_voz cv
+            JOIN chamada ch ON cv.id_chamada = ch.id_chamada
+            GROUP BY ch.numero
+        ));
+--------------------------------------------------------
+--  DDL for View VIEW_B
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_B" ("PLANO", "NUM_CLIENTE", "DATA_CONTRATO", "PERIODO_FIDELIZACAO", "N_MEDIO_CHAMADAS_3MESES", "N_MEDIO_MENSAL_TOTAL_PERIODO") AS 
+  SELECT a.ID_PLANO AS Plano, 
+       co.ID_CLIENTE AS Num_Cliente, 
+       co.DATA_INICIO AS Data_Contrato,
+       CO.PERIODO_FIDELIZACAO,
+       TRUNC(COUNT( cv.id_chamada)/3,2) AS n_medio_chamadas_3meses,
+       TRUNC(COUNT( cv.id_chamada)/ROUND(MONTHS_BETWEEN(sysdate, co.data_inicio) * 12, 1),2) AS N_Medio_mensal_total_periodo
+
+       
+FROM CONTRATO co
+   JOIN ASSOCIADO a ON a.ID_CONTRATO = co.ID_CONTRATO
+   LEFT JOIN NUM_TELEFONE nt ON co.NUMERO = nt.NUMERO
+   LEFT JOIN CHAMADA ch ON ch.NUMERO = nt.NUMERO
+   LEFT JOIN CHAMADA_VOZ cv ON cv.ID_CHAMADA = ch.ID_CHAMADA
+
+WHERE co.PERIODO_FIDELIZACAO <=90 
+      AND cv.DATA_INICIO >= ADD_MONTHS(SYSDATE, -3)
+      
+GROUP BY 
+    CV.ID_CHAMADA, a.ID_PLANO, co.ID_CLIENTE, co.DATA_INICIO,CO.PERIODO_FIDELIZACAO,(MONTHS_BETWEEN(sysdate, co.data_inicio) * 12)
+HAVING TRUNC(COUNT( cv.id_chamada)/3,2)< TRUNC(COUNT( cv.id_chamada)/ROUND(MONTHS_BETWEEN(sysdate, co.data_inicio) * 12, 1),2)
+
+ORDER BY N_Medio_mensal_total_periodo DESC;
+--------------------------------------------------------
+--  DDL for View VIEW_C
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_C" ("CONTRATO", "PLANO", "NOME", "CIDADE", "TELEFONE", "DESTINO", "PERCENTAGEM", "NUM_CHAMADAS", "NUM_CHAMADAS_TOTAL") AS 
+  SELECT
+      t.a1 AS Contrato,
+      t.a2 AS PLANO,
+      t.a3 AS NOME,
+      t.a4 AS Cidade,
+      t.a5 AS Telefone,
+      t.a6 AS Destino, 
+      TRUNC(t.percentagem, 2) AS percentagem,
+      t.NUM_CHAMADAS,
+      --COUNT(CH.id_chamada) AS Num_chamadas_total
+      t.num_chamadas_total AS NUM_CHAMADAS_TOTAL
+      
+FROM (
+    SELECT
+        C.ID_CONTRATO a1,
+        pps.ID_PLANO a2,
+        cli.NOME a3,
+        cli.MORADA a4,
+        n.NUMERO a5,
+        CH.N_DESTINO a6,
+        COUNT(CH.N_DESTINO) AS NUM_CHAMADAS,
+        COUNT(CH.N_DESTINO) * 100 / SUM(COUNT(CH.N_DESTINO)) OVER (PARTITION BY C.ID_CONTRATO, pps.ID_PLANO, cli.NOME, cli.MORADA, N.NUMERO) AS percentagem,
+        SUM(COUNT(CH.N_DESTINO)) OVER (PARTITION BY C.ID_CONTRATO, pps.ID_PLANO, cli.NOME, cli.MORADA, N.NUMERO) AS NUM_CHAMADAS_TOTAL
+    FROM
+        CONTRATO C
+        JOIN ASSOCIADO A ON C.ID_CONTRATO = A.ID_CONTRATO
+        JOIN PLANO_POSPAGO_SIMPLES pps ON A.ID_PLANO = pps.ID_PLANO
+        JOIN PLANO_POSPAGO_PLAFOND ppp ON pps.ID_PLANO = ppp.ID_PLANO
+        JOIN CLIENTE cli ON C.ID_CLIENTE = cli.ID_CLIENTE
+        JOIN NUM_TELEFONE n ON c.NUMERO = n.NUMERO
+        JOIN CHAMADA ch ON n.NUMERO = ch.NUMERO
+        JOIN CHAMADA_VOZ cv ON ch.ID_CHAMADA = cv.ID_CHAMADA
+    WHERE 
+        EXTRACT(YEAR FROM cv.DATA_INICIO) = EXTRACT(YEAR FROM SYSDATE)
+    GROUP BY
+        C.ID_CONTRATO,
+        pps.ID_PLANO,
+        cli.NOME,
+        cli.MORADA,
+        N.NUMERO,
+        ch.N_DESTINO) t
+
+WHERE percentagem > 50
+       
+ORDER BY
+    percentagem DESC;
+--------------------------------------------------------
+--  DDL for View VIEW_D
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_D" ("Ano_Mes", "Plano", "quantidade_novos_contratos", "quant_contratos_terminados") AS 
+  SELECT 
+    to_char(add_months(C.DATA_INICIO, 0), 'YYYY-MM') AS "Ano_Mes",
+    ad.ID_PLANO AS "Plano",
+    COUNT(Ad.id_contrato) AS "quantidade_novos_contratos",
+    COUNT(CT.ID_CANCELAMENTO) AS "quant_contratos_terminados"
+FROM
+     CONTRATO C
+     JOIN ASSOCIADO ad ON C.ID_CONTRATO = Ad.ID_CONTRATO
+     LEFT JOIN CANCELAMENTO CT ON C.ID_CONTRATO = CT.ID_CONTRATO  
+
+WHERE
+  c.DATA_INICIO BETWEEN ADD_MONTHS(SYSDATE, -12) AND ADD_MONTHS(SYSDATE, 0)
+GROUP BY 
+    to_char(add_months(C.DATA_INICIO, 0), 'YYYY-MM'),ad.ID_PLANO 
+    
+ORDER BY 1 ASC, 3 DESC;
+--------------------------------------------------------
+--  DDL for View VIEW_E
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_E" ("Dia da semana", "Hora", "Quantidade Chamadas", "Media Chamadas", "Tipo chamada") AS 
+  select
+    to_char(o.data_inicio, 'Day') as "Dia da semana", 
+    to_char(o.data_inicio, 'HH24') as "Hora",
+    count(*) as "Quantidade Chamadas",
+    trunc(mc."Media Chamadas", 2) as "Media Chamadas", 
+    'Outras Chamadas' as "Tipo chamada"
+  from
+    outras_chamadas o
+    join(
+      select 
+        to_char(data_inicio, 'Day') as "Dia da Semana",
+        to_char(data_inicio, 'HH24') as "Hora",
+        avg(count(*)) over (partition by to_char(data_inicio, 'Day')) as "Media Chamadas"
+      from outras_chamadas
+      group by to_char(data_inicio, 'Day'), to_char(data_inicio, 'HH24')
+    ) mc on to_char(o.data_inicio, 'Day') = mc."Dia da Semana" and to_char(o.data_inicio, 'HH24') = mc."Hora"
+  group by
+    to_char(o.data_inicio, 'Day'), 
+    to_char(o.data_inicio, 'HH24'),
+    mc."Media Chamadas"
+  having
+    count(*) > mc."Media Chamadas"
+    
+  union all
+  
+  select
+    to_char(o.data_inicio, 'Day') as "Dia da semana", 
+    to_char(o.data_inicio, 'HH24') as "Hora",
+    count(*) as "Quantidade Chamadas",
+    trunc(mc."Media Chamadas", 2) as "Media Chamadas", 
+    'Chamada Voz' as "Tipo chamada"
+  from
+    chamada_voz o
+    join(
+      select 
+        to_char(data_inicio, 'Day') as "Dia da Semana",
+        to_char(data_inicio, 'HH24') as "Hora",
+        avg(count(*)) over (partition by to_char(data_inicio, 'Day')) as "Media Chamadas"
+      from chamada_voz
+      group by to_char(data_inicio, 'Day'), to_char(data_inicio, 'HH24')
+    ) mc on to_char(o.data_inicio, 'Day') = mc."Dia da Semana" and to_char(o.data_inicio, 'HH24') = mc."Hora"
+  group by
+    to_char(o.data_inicio, 'Day'), 
+    to_char(o.data_inicio, 'HH24'),
+    mc."Media Chamadas"
+  having
+    count(*) > mc."Media Chamadas"
+  
+  union all
+  
+  select
+    to_char(o.data_envio, 'Day') as "Dia da semana", 
+    to_char(o.data_envio, 'HH24') as "Hora",
+    count(*) as "Quantidade Chamadas",
+    trunc(mc."Media Chamadas", 2) as "Media Chamadas", 
+    'SMS' as "Tipo chamada"
+  from
+    sms o
+    join(
+      select 
+        to_char(data_envio, 'Day') as "Dia da Semana",
+        to_char(data_envio, 'HH24') as "Hora",
+        avg(count(*)) over (partition by to_char(data_envio, 'Day')) as "Media Chamadas"
+      from sms
+      group by to_char(data_envio, 'Day'), to_char(data_envio, 'HH24')
+    ) mc on to_char(o.data_envio, 'Day') = mc."Dia da Semana" and to_char(o.data_envio, 'HH24') = mc."Hora"
+  group by
+    to_char(o.data_envio, 'Day'), 
+    to_char(o.data_envio, 'HH24'),
+    mc."Media Chamadas"
+  having
+    count(*) > mc."Media Chamadas"
+    
+  order by 
+    1, 3 DESC;
+--------------------------------------------------------
+--  DDL for View VIEW_K_2021136600
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_K_2021136600" ("Numero de telefone 1", "Numero de telefone 2", "Quantidade de Chamadas", "Quantidade de SMS", "Total de Chamadas e SMS") AS 
+  SELECT DISTINCT
+  CASE WHEN n1.numero < n2.numero THEN n1.numero ELSE n2.numero END AS "Numero de telefone 1",
+  CASE WHEN n1.numero < n2.numero THEN n2.numero ELSE n1.numero END AS "Numero de telefone 2",
+  
+  (SELECT COUNT(*)
+   FROM chamada c
+   WHERE c.numero = n1.numero AND c.n_destino = n2.numero AND upper(c.tipo) = 'VOZ'
+      OR c.numero = n2.numero AND c.n_destino = n1.numero AND upper(c.tipo) = 'VOZ') AS "Quantidade de Chamadas",
+    
+  (SELECT COUNT(*)
+   FROM chamada c
+   WHERE c.numero = n1.numero AND c.n_destino = n2.numero AND upper(c.tipo) = 'SMS'
+      OR c.numero = n2.numero AND c.n_destino = n1.numero AND upper(c.tipo) = 'SMS') AS "Quantidade de SMS",
+  
+  ((SELECT COUNT(*)
+    FROM chamada c
+    WHERE c.numero = n1.numero AND c.n_destino = n2.numero AND upper(c.tipo) = 'VOZ'
+       OR c.numero = n2.numero AND c.n_destino = n1.numero AND upper(c.tipo) = 'VOZ')
+   +
+   (SELECT COUNT(*)
+    FROM chamada c
+    WHERE c.numero = n1.numero AND c.n_destino = n2.numero AND upper(c.tipo) = 'SMS'
+       OR c.numero = n2.numero AND c.n_destino = n1.numero AND upper(c.tipo) = 'SMS')
+  ) AS "Total de Chamadas e SMS"
+  
+FROM 
+  num_telefone n1
+  JOIN chamada ch ON n1.numero = ch.numero
+  JOIN num_telefone n2 ON ch.n_destino = n2.numero AND n1.numero <> n2.numero
+  
+ORDER BY 5 DESC;
+--------------------------------------------------------
+--  DDL for View VIEW_K_2021139149
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_K_2021139149" ("ID_CLIENTE", "N_CONTRATOS_PRE_PAGOS", "N_CONTRATOS_POS_PAGOS_PLAFOND", "N_CONTRATOS_POS_PAGOS_SIMPLES") AS 
+  SELECT
+    c.id_cliente,
+    COUNT( CASE WHEN ppr.id_plano IS NOT NULL THEN c.id_contrato END) AS n_contratos_pre_pagos,
+    COUNT( CASE WHEN pps_plafond.id_plano IS NOT NULL THEN c.id_contrato END) AS n_contratos_pos_pagos_plafond,
+    COUNT( CASE WHEN pps_simples.id_plano IS NOT NULL THEN c.id_contrato END) AS n_contratos_pos_pagos_simples
+FROM
+    contrato c
+LEFT JOIN associado acd ON c.id_contrato = acd.id_contrato
+LEFT JOIN plano_prepago ppr ON acd.id_plano = ppr.id_plano 
+LEFT JOIN plano_pospago_simples pps_simples ON acd.id_plano = pps_simples.id_plano 
+LEFT JOIN plano_pospago_plafond pps_plafond ON acd.id_plano = pps_plafond.id_plano 
+WHERE  c.data_inicio >= TRUNC(SYSDATE, 'MM') - INTERVAL '1' MONTH
+          AND c.data_inicio < LAST_DAY(TRUNC(SYSDATE, 'MM') - INTERVAL '1' MONTH) + 1
+GROUP BY c.id_cliente;
+--------------------------------------------------------
+--  DDL for View VIEW_K_2021142527
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_K_2021142527" ("MES_CANCEL", "NOME_CLIENTE", "ID_CONTRATO", "ID_CANCELAMENTO") AS 
+  select
+    EXTRACT(MONTH FROM canc.data_cancel) as mes_cancel,
+    cl.nome as nome_cliente,
+    ct.ID_CONTRATO,
+    canc.id_cancelamento
+   
+    
+ 
+ from 
+  contrato ct
+  join cliente cl on ct.ID_CLIENTE = cl.ID_CLIENTE
+  join cancelamento canc on ct.ID_CONTRATO = canc.ID_CONTRATO
+ 
+  group by
+   EXTRACT(MONTH FROM canc.data_cancel), ct.ID_CONTRATO,  cl.nome,  canc.id_cancelamento;
+--------------------------------------------------------
+--  DDL for View VIEW_L_2021136600
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_L_2021136600" ("Nome do Cliente", "ID do Cliente", "Tarifario_TotalPagar", "Plano_TotalPagar", "Total sem descontos") AS 
+  SELECT DISTINCT 
+  cl.nome AS "Nome do Cliente",
+  cl.id_cliente AS "ID do Cliente",
+  COALESCE(tarifario_total.total_pagar, 0) AS "Tarifario_TotalPagar",
+  COALESCE(plano_total.total_pagar, 0) AS "Plano_TotalPagar",
+  (COALESCE(tarifario_total.total_pagar, 0) + COALESCE(plano_total.total_pagar, 0)) AS "Total sem descontos"
+  
+FROM 
+  contrato ct
+  join cliente cl on ct.id_cliente = cl.id_cliente
+  left join (
+    SELECT 
+      ct.id_cliente, 
+      SUM(NVL(ta.valorunidade,0)) AS total_pagar
+    FROM 
+      contrato ct
+      join tarifario ta on ct.id_tarifario = ta.id_tarifario
+    GROUP BY  
+      ct.id_cliente
+  ) tarifario_total ON cl.id_cliente = tarifario_total.id_cliente
+  left join (
+    SELECT 
+      cl.id_cliente, 
+      SUM(NVL(pps.valor_servico,0)) AS total_pagar
+    FROM 
+      cliente cl
+      join contrato ct on ct.id_cliente = cl.id_cliente
+      left join associado ass on ct.id_contrato = ass.id_contrato
+      join plano_pospago_simples pps on ass.id_plano = pps.id_plano
+    GROUP BY  
+      cl.id_cliente
+  ) plano_total ON cl.id_cliente = plano_total.id_cliente
+
+ORDER BY 5 DESC;
+--------------------------------------------------------
+--  DDL for View VIEW_L_2021139149
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_L_2021139149" ("ID_CLIENTE", "N_DESTINOS_LIGADOS", "N_CHAMADAS_VOZ", "DURACAO_TOTAL_MINUTOS", "MEDIA", "N_SMS_ENVIADOS") AS 
+  SELECT 
+       co.id_cliente AS ID_CLIENTE, 
+       COUNT(ch.n_destino) AS N_DESTINOS_LIGADOS,
+       COUNT(DISTINCT cv.id_chamada) AS N_CHAMADAS_VOZ,
+       SUM(EXTRACT(hour FROM (cv.DATA_FIM - cv.DATA_INICIO))) AS DURACAO_TOTAL_MINUTOS,
+       (SELECT TRUNC(AVG(total_duracao),1) AS MEDIA_CHAMADAS
+        FROM (
+            SELECT cv.ID_CHAMADA, SUM(EXTRACT(hour FROM (cv.DATA_FIM - cv.DATA_INICIO))) AS total_duracao
+            FROM chamada_voz cv 
+            JOIN chamada ch ON cv.ID_CHAMADA = ch.ID_CHAMADA
+            JOIN contrato c ON c.NUMERO = ch.NUMERO
+            --WHERE c.ID_CLIENTE = co.ID_CLIENTE
+            GROUP BY cv.ID_CHAMADA
+        )) AS MEDIA,
+       --AVG(SUM(EXTRACT(hour FROM (cv.DATA_FIM - cv.DATA_INICIO)))) AS MEDIA_CHAMADAS,
+       COUNT(s.id_chamada) AS N_SMS_ENVIADOS
+FROM chamada ch
+LEFT JOIN chamada_voz cv ON ch.ID_CHAMADA = cv.ID_CHAMADA 
+LEFT JOIN sms s ON ch.ID_CHAMADA = s.ID_CHAMADA
+JOIN num_telefone nt ON ch.NUMERO = nt.NUMERO
+JOIN CONTRATO co ON nt.NUMERO = co.NUMERO
+GROUP BY co.id_cliente;
+--------------------------------------------------------
+--  DDL for View VIEW_L_2021142527
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_L_2021142527" ("TIPO_PLANO", "QUANT_PLANOS", "AVG_MINUTOS", "AVG_SMS") AS 
+  select 
+'Pospago Plafond' AS tipo_plano,
+  count(ppp.ID_PLANO) AS QUANT_PLANOS,avg(ppp.minutos) as AVG_MINUTOS, avg(ppp.sms) as AVG_sms
+  from PLANO_POSPAGO_PLAFOND PPP
+  WHERE ID_PLANO in(
+    select PPS.ID_PLANO FROM PLANO_POSPAGO_SIMPLES PPS)
+  
+  
+ UNION
+ 
+ select
+ 'Prepago' AS tipo_plano,
+ count(pp.ID_PLANO) AS QUANT_PLANOS, avg(pp.minutos) as AVG_MINUTOS, avg(pp.minutos) as AVG_sms
+ from PLANO_PREPAGO PP
+  WHERE ID_PLANO in(
+    select PPs.ID_PLANO FROM PLANO_POSPAGO_SIMPLES PPS);
+--------------------------------------------------------
+--  DDL for View VISTA_F
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VISTA_F" ("Nome do Cliente", "Numero de telefone", "Ano_Mes", "Quantidade de Minutos", "Quantidade de Chamadas", "Quantidade de SMS") AS 
+  SELECT 
+  cl.nome AS "Nome do Cliente",
+  nt.numero AS "Numero de telefone",
+  to_char(add_months(sysdate, -1), 'YYYY-MM') AS "Ano_Mes",
+  NVL(SUM(extract(minute from chv.data_fim - chv.data_inicio)),0) AS "Quantidade de Minutos",
+  COUNT(DISTINCT chv.id_chamada) AS "Quantidade de Chamadas",
+  COUNT(DISTINCT s.id_chamada) AS "Quantidade de SMS"
+  
+FROM 
+  chamada ch
+  left join chamada_voz chv on ch.id_chamada = chv.id_chamada
+  left join sms s on ch.id_chamada = s.id_chamada
+  join num_telefone nt on ch.n_destino = nt.numero
+  join contrato ct on nt.numero = ct.numero
+  join tarifario ta on ct.id_tarifario = ta.id_tarifario
+  join cliente cl on ct.id_cliente = cl.id_cliente
+
+WHERE 
+  chv.data_inicio >= add_months(trunc(sysdate, 'MM'), -1) 
+  AND chv.data_inicio < trunc(sysdate, 'MM')
+  AND upper(ta.rede) = 'FIXA'
+  AND ROWNUM <= 10
+  
+GROUP BY  
+  cl.nome, nt.numero, to_char(add_months(sysdate, -1), 'YYYY-MM')
+  
+ORDER BY 4 DESC;
+--------------------------------------------------------
+--  DDL for View VISTA_G
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VISTA_G" ("Nome do Cliente", "Fixa_QuantChamadas", "Fixa_TotalPagar", "Movel_QuantChamadas", "Movel_TotalPagar") AS 
+  SELECT 
+  cl.nome AS "Nome do Cliente",
+  SUM(CASE WHEN upper(ta.rede) = 'FIXA' THEN 1 ELSE 0 END) AS "Fixa_QuantChamadas",
+  SUM(CASE WHEN upper(ta.rede) = 'FIXA' THEN ta.valorunidade ELSE 0 END) as "Fixa_TotalPagar",
+  SUM(CASE WHEN upper(ta.rede) = 'MOVEL' THEN 1 ELSE 0 END) as "Movel_QuantChamadas",
+  SUM(CASE WHEN upper(ta.rede) = 'MOVEL' THEN ta.valorunidade ELSE 0 END) as "Movel_TotalPagar"
+  
+FROM 
+  chamada ch
+  left join chamada_voz chv on ch.id_chamada = chv.id_chamada
+  left join sms s on ch.id_chamada = s.id_chamada
+  left join outras_chamadas och on ch.id_chamada = och.id_chamada
+  join num_telefone nt on ch.n_destino = nt.numero
+  join contrato ct on nt.numero = ct.numero
+  join tarifario ta on ct.id_tarifario = ta.id_tarifario
+  join cliente cl on ct.id_cliente = cl.id_cliente
+  
+WHERE 
+  extract(year from nvl(chv.data_inicio, sysdate)) = extract(year from sysdate)
+  and extract(year from nvl(s.data_envio, sysdate)) = extract(year from sysdate)
+  and extract(year from nvl(och.data_inicio, sysdate)) = extract(year from sysdate)
+  
+GROUP BY  
+  cl.nome
+  
+ORDER BY ABS(SUM(CASE WHEN upper(ta.rede) = 'FIXA' THEN 1 ELSE 0 END) - SUM(CASE WHEN upper(ta.rede) = 'MOVEL' THEN 1 ELSE 0 END)) DESC;
+--------------------------------------------------------
+--  DDL for View VISTA_H
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VISTA_H" ("ID_PLANO", "QTD_CHAMADAS", "QUANT_MINUTO", "CUSTO_CHAMADA", "QUANT_SMS", "CUSTO_SMS") AS 
+  select 
+  CP.ID_PLANO,
+  SUM( CASE WHEN UPPER(ch.TIPO) = 'VOZ' THEN 1 ELSE 0 END) AS QTD_CHAMADAS,
+ -- EXTRACT(MINUTE FROM (CVZ.data_fim - CVZ.data_inicio) DAY TO SECOND) AS QUANT_MINUTO
+ EXTRACT(MINUTE FROM (CVZ.data_fim - CVZ.data_inicio)) AS QUANT_MINUTO,
+ --CH.ID_CHAMADA,
+ SUM( CASE WHEN UPPER(TA.UNIDADE) = 'MINUTO' THEN (EXTRACT(MINUTE FROM (CVZ.data_fim - CVZ.data_inicio))) * (TA.VALORUNIDADE) ELSE 0 END) AS CUSTO_CHAMADA,
+SUM(CASE WHEN UPPER(ch.TIPO) = 'SMS' THEN 1 ELSE 0 END) AS QUANT_SMS,
+SUM(CASE WHEN UPPER(TA.UNIDADE) = 'SMS' THEN TA.VALORUNIDADE ELSE 0 END) AS CUSTO_SMS
+from
+ PLANO_POSPAGO_SIMPLES CP
+ JOIN ASSOCIADO ASS ON CP.ID_PLANO = ASS.ID_PLANO
+ join contrato ct on ass.id_contrato = ct.id_contrato
+ join num_telefone nt on ct.numero = nt.numero
+ join chamada ch on nt.numero = ch.numero
+ join chamada_voz cvz on ch.id_chamada = cvz.id_chamada
+ LEFT join sms s on ch.id_chamada = s.id_chamada
+ join tarifario ta on ct.id_tarifario = ta.id_tarifario
+ 
+ GROUP BY 
+  CP.ID_PLANO,
+  EXTRACT(MINUTE FROM (CVZ.data_fim - CVZ.data_inicio));
+--------------------------------------------------------
+--  DDL for View VISTA_I
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VISTA_I" ("Mes", "Plano", "Quant_Minutos_PLano", "Quant_Minutos_Utilizado", "Percentagem_Utilizacao") AS 
+  SELECT 
+  EXTRACT(MONTH FROM ct.DATA_INICIO) AS "Mes",
+  pps.nome AS "Plano",
+  ppp.MINUTOS AS "Quant_Minutos_PLano",
+  AVG(NVL(nt.MIN_GASTOS,0)) AS "Quant_Minutos_Utilizado",
+  AVG(NVL(nt.MIN_GASTOS / ppp.MINUTOS,0)) * 100 AS "Percentagem_Utilizacao"
+  
+FROM 
+  contrato ct
+  join num_telefone nt on ct.numero = nt.numero
+  join associado ass on ct.ID_CONTRATO = ass.ID_CONTRATO
+  join PLANO_POSPAGO_SIMPLES pps on ass.id_plano = pps.id_plano
+  join PLANO_POSPAGO_PLAFOND ppp on pps.ID_PLANO = ppp.ID_PLANO
+  
+--WHERE 
+  --EXTRACT(YEAR FROM ct.DATA_INICIO) = 2021
+
+GROUP BY 
+  EXTRACT(MONTH FROM ct.DATA_INICIO),
+  pps.nome,
+  ppp.MINUTOS
+  
+ORDER BY 1 DESC, 5 ASC;
+--------------------------------------------------------
+--  DDL for View VISTA_J
+--------------------------------------------------------
+
+  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VISTA_J" ("ID_CAMPANHA", "Quantidade de Chamadas") AS 
+  select 
+    CAM.ID_CAMPANHA,
+    COUNT(CASE WHEN 
+    (ch.numero = nt1.numero AND ch.n_destino = nt2.numero AND upper(ch.tipo) = 'VOZ')
+    OR (ch.numero = nt2.numero AND ch.n_destino = nt1.numero AND upper(ch.tipo) = 'VOZ')
+    THEN cvz.id_chamada END) AS "Quantidade de Chamadas"
+    
+
+from
+ CAMPANHA CAM
+ join grupo gr on CAM.ID_CAMPANHA = gr.ID_CAMPANHA
+ join adere ad on GR.ID_GRUPO = ad.ID_GRUPO
+ join num_telefone nt on ad.NUMERO = nt.NUMERO
+ join chamada ch on nt.NUMERO = ch.NUMERO
+ JOIN num_telefone nt1 ON ch.numero = nt1.numero
+  JOIN num_telefone nt2 ON ch.n_destino = nt2.numero
+ left join chamada_voz cvz on ch.ID_CHAMADA = cvz.id_chamada
+ 
+ GROUP BY 
+  CAM.ID_CAMPANHA;

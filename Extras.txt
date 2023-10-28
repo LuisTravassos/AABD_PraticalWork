@@ -1,0 +1,31 @@
+
+CREATE OR REPLACE VIEW VIEW_K_2021136600 AS
+
+SELECT 
+  cl.nome AS "Nome do Cliente",
+  cl.id_cliente AS "ID do Cliente",
+  
+  SUM(NVL(ta.valorunidade,0)) as "Tarifario_TotalPagar"
+  
+FROM 
+  chamada ch
+--  left join chamada_voz chv on ch.id_chamada = chv.id_chamada
+--  left join sms s on ch.id_chamada = s.id_chamada
+--  left join outras_chamadas och on ch.id_chamada = och.id_chamada
+  join num_telefone nt on ch.n_destino = nt.numero
+  join contrato ct on nt.numero = ct.numero
+  left join tarifario ta on ct.id_tarifario = ta.id_tarifario
+  join cliente cl on ct.id_cliente = cl.id_cliente
+  
+--WHERE 
+  
+  
+GROUP BY  
+  cl.nome,
+  cl.id_cliente
+  
+ORDER BY 3 DESC;
+
+
+
+delete from aplicavel;

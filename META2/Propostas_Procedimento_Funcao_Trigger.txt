@@ -1,0 +1,36 @@
+Pedro Antunes Pontes, nº2021142527
+
+	Procedimento:
+    	-> Regista o cancelamento de um contrato;
+
+	Função:
+    	-> Calcula o valor final de um periodo de faturaçao tendo em conta o desconto caso pertença a uma campanha;
+
+	Trigger:
+    	-> Quando é registado um carregamento, atulizar o saldo do telemovel;
+
+
+
+Rodrigo Ramalho Ferreira, nº2021139149
+	
+	Procedimento:
+	-> Efetua um novo carregamento para um determinado número de telefone que possua o plano pré pago;
+
+	Função: 
+	-> Retornar o total de minutos utilizados em chamadas de voz para um determinado número de telefone em um determinado periodo;
+
+	Trigger:
+	-> Apaga da tabela num_telefone o numero de telefone que tenha o contrato cancelado;
+
+
+
+Luís Henrique Pessoa Oliveira Travassos, nº2021136600
+
+	Procedimento:
+	-> Permite numeros aderirem a grupos na tabela GRUPO;
+
+	Função:
+	-> Verifica se tarifario X é aplicavel a plano Y e se o user pretender associa os dois na tabela aplicavel;
+	
+	Trigger:
+	-> Ao inserir uma entrada na tabela CHAMADA irá ver qual o tipo dela e registar esse ID na tabela respetiva. Por exemplo, CHAMADA, id - 123, TIPO - VOZ irá gerar em CHAMADA_VOZ, id - 123;

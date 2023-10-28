@@ -1,0 +1,216 @@
+--------------------------------------------------------
+--  File created - Quinta-feira-Junho-08-2023   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for Trigger I_ATUALIZA_SALDO
+--------------------------------------------------------
+
+  CREATE OR REPLACE TRIGGER "LEIAABDG03"."I_ATUALIZA_SALDO" 
+  before insert on eventos
+  for each row
+  
+declare
+
+--cursor para obter a chamada e os dados do numero associado ao evento
+  cursor c1 is
+    select
+      ch.id_chamada as chID,
+      nt.numero as ntNum,
+      nt.saldo as ntSaldo
+    from 
+      chamada ch
+      join num_telefone nt on ch.numero = nt.numero
+    where
+      ch.id_chamada = :new.id_chamada;
+  
+--variaveis  
+  saldoMinus float;
+  
+--exceções  
+  IDchamada exception;
+  pragma exception_init(IDchamada, -20514);
+  tarCompativel exception;
+  pragma exception_init(tarCompativel, -20531);
+  
+begin
+
+--so se o evento for de termino de chamada
+  if (upper(:new.estado) = 'CHAMADA TERMINADA') then
+  
+    for i in c1 loop
+    --chama função B
+      saldoMinus := b_custo_da_chamada(i.chID);
+      
+      --se tiver saldo para pagar o custo da chamada paga
+      if(i.ntSaldo >= saldoMinus) then
+        update num_telefone
+          set saldo = saldo - saldoMinus
+          where numero = i.ntNum;
+      end if;
+    end loop; 
+  end if;
+
+end;
+/
+ALTER TRIGGER "LEIAABDG03"."I_ATUALIZA_SALDO" ENABLE;
+--------------------------------------------------------
+--  DDL for Trigger L_CARREGA_CARTAO_PREPAGO
+--------------------------------------------------------
+
+  CREATE OR REPLACE TRIGGER "LEIAABDG03"."L_CARREGA_CARTAO_PREPAGO" 
+after insert on carregamento
+for each row
+declare
+  planopre exception;
+  pragma exception_init(planopre, -20525);
+  
+  saldo_atual number;
+  saldo_atualizado number;
+  verifica number;
+  ndias number;
+  idf number;
+  idcon number;
+  valorpagar float;
+  dat date;
+begin
+   -- Verifica se o número de telefone está associado a um plano pré-pago
+   select count(ppre.id_plano) into verifica
+   from plano_prepago ppre
+    join plano_pospago_simples pps on ppre.id_plano = pps.id_plano
+    join associado ass on pps.id_plano = ass.id_plano
+    join contrato ct on ass.id_contrato = ct.id_contrato
+    join num_telefone nt on ct.numero = nt.numero
+   where nt.numero = :new.numero and ass.id_plano = :new.id_plano; 
+   
+   if verifica = 0 then
+    raise planopre;
+   end if;
+   
+   -- Obtém o saldo atual do número de telefone
+   select saldo into saldo_atual
+   from num_telefone
+   where numero = :new.numero;
+   
+   -- Obtém a duração do período de faturação do plano pré-pago
+   select pp.numero_dias, ct.id_contrato into ndias, idcon
+   from plano_prepago pp
+    join plano_pospago_simples pps on pp.id_plano = pps.id_plano
+    join associado ass on pps.id_plano = ass.id_plano
+    join contrato ct on ass.id_contrato = ct.id_contrato
+    join num_telefone nt on ct.numero = nt.numero
+  where nt.numero = :new.numero;
+   
+   -- Atualiza o saldo do número de telefone
+   saldo_atualizado := saldo_atual + :new.valor;
+   update num_telefone
+   set saldo = saldo_atualizado
+   where numero = :new.numero;
+   
+   -- Regista o início de um novo período de faturação
+   select max(id_faturacao) into idf
+   from periodo_faturacao;
+   
+   idf := idf + 1;
+   dat := sysdate + ndias;
+   insert into periodo_faturacao values(idf, idcon,sysdate, dat,10);
+   
+   -- Tratamento exceções
+   exception
+      when planopre then
+        dbms_output.put_line('Erro: Numero nao possui plano pre pago');
+   
+end;
+/
+ALTER TRIGGER "LEIAABDG03"."L_CARREGA_CARTAO_PREPAGO" ENABLE;
+--------------------------------------------------------
+--  DDL for Trigger O_TRIG_2021136600_1
+--------------------------------------------------------
+
+  CREATE OR REPLACE TRIGGER "LEIAABDG03"."O_TRIG_2021136600_1" 
+  after insert or update on chamada
+  for each row
+declare
+  
+  /*ATENCAO, como este trigger era muito simples fiz um segundo de natureza 
+  semelhante chamado o_trig_2021136600_2*/
+  
+begin
+
+--Verifica o tipo de chamada e adiciona na tabela respetiva a entrada
+--o trigger é after para se puder ir buscar o id correto
+  if (upper(:new.tipo) = 'VOZ') then
+    insert into chamada_voz values (:new.id_chamada, sysdate - 0.1, sysdate + 1);
+    
+  elsif (upper(:new.tipo) = 'SMS') then
+    insert into sms values (:new.id_chamada, sysdate - 0.1, sysdate + 1, 'Boas');
+    
+  elsif (upper(:new.tipo) = 'OUTRO') then
+    insert into outras_chamadas values (:new.id_chamada, sysdate - 0.1, sysdate + 1);
+    
+  else
+--nao insere nada caso o tipo seja errado 
+    raise_application_error(-20572, 'Tipo da chamada desconhecido');
+    
+  end if;
+end;
+/
+ALTER TRIGGER "LEIAABDG03"."O_TRIG_2021136600_1" ENABLE;
+--------------------------------------------------------
+--  DDL for Trigger O_TRIG_2021136600_2
+--------------------------------------------------------
+
+  CREATE OR REPLACE TRIGGER "LEIAABDG03"."O_TRIG_2021136600_2" 
+  after insert or update on plano_pospago_simples
+  for each row
+declare
+  
+  /*ATENCAO, como este trigger era muito simples fiz um segundo de natureza 
+  semelhante chamado o_trig_2021136600_1*/
+  
+begin
+--Verifica o tipo de chamada e adiciona na tabela respetiva a entrada
+--o trigger é after para se puder ir buscar o id correto
+  if(INSTR(:new.nome, 'PPP ') > 0) then
+    insert into plano_pospago_plafond(id_plano) values (:new.id_plano);
+    
+  elsif(INSTR(:new.nome, 'PP ') > 0) then
+    insert into plano_prepago(id_plano) values (:new.id_plano);
+    
+  else
+--nao insere nada caso o tipo seja errado   
+    raise_application_error(-20571, 'Tipo da plano desconhecido');
+    
+  end if;
+end;
+/
+ALTER TRIGGER "LEIAABDG03"."O_TRIG_2021136600_2" ENABLE;
+--------------------------------------------------------
+--  DDL for Trigger O_TRIG_2021139149
+--------------------------------------------------------
+
+  CREATE OR REPLACE TRIGGER "LEIAABDG03"."O_TRIG_2021139149" 
+after insert on cancelamento
+for each row
+begin
+    --atualiza o atributo valido do contrato para 1
+    update contrato set valido = 1 where id_contrato = :new.id_contrato;
+end;
+/
+ALTER TRIGGER "LEIAABDG03"."O_TRIG_2021139149" ENABLE;
+--------------------------------------------------------
+--  DDL for Trigger O_TRIG_2021142527
+--------------------------------------------------------
+
+  CREATE OR REPLACE TRIGGER "LEIAABDG03"."O_TRIG_2021142527" 
+AFTER INSERT ON carregamento
+FOR EACH ROW
+BEGIN
+  --este trigger atualiza o saldo do telemovel cada vez que é efetuado um carregamento
+  
+  
+  UPDATE num_telefone num
+  SET saldo = saldo + :new.valor --adiciona o valor do carregamento ao saldo atual
+  WHERE num.numero = :new.numero;
+END;
+/
+ALTER TRIGGER "LEIAABDG03"."O_TRIG_2021142527" ENABLE;

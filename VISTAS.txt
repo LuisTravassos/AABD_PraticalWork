@@ -1,0 +1,228 @@
+
+---VIEW SELECT ENCADEADO---
+
+CREATE OR REPLACE VIEW VIEW_L_2021136600 AS 
+SELECT DISTINCT 
+  cl.nome AS "Nome do Cliente",
+  cl.id_cliente AS "ID do Cliente",
+  COALESCE(tarifario_total.total_pagar, 0) AS "Tarifario_TotalPagar",
+  COALESCE(plano_total.total_pagar, 0) AS "Plano_TotalPagar",
+  (COALESCE(tarifario_total.total_pagar, 0) + COALESCE(plano_total.total_pagar, 0)) AS "Total sem descontos"
+  
+FROM 
+  contrato ct
+  join cliente cl on ct.id_cliente = cl.id_cliente
+  left join (
+    SELECT 
+      ct.id_cliente, 
+      SUM(NVL(ta.valorunidade,0)) AS total_pagar
+    FROM 
+      contrato ct
+      join tarifario ta on ct.id_tarifario = ta.id_tarifario
+    GROUP BY  
+      ct.id_cliente
+  ) tarifario_total ON cl.id_cliente = tarifario_total.id_cliente
+  left join (
+    SELECT 
+      cl.id_cliente, 
+      SUM(NVL(pps.valor_servico,0)) AS total_pagar
+    FROM 
+      cliente cl
+      join contrato ct on ct.id_cliente = cl.id_cliente
+      left join associado ass on ct.id_contrato = ass.id_contrato
+      join plano_pospago_simples pps on ass.id_plano = pps.id_plano
+    GROUP BY  
+      cl.id_cliente
+  ) plano_total ON cl.id_cliente = plano_total.id_cliente
+
+ORDER BY 5 DESC;
+ 
+
+
+
+
+
+--- VIEW GROUP BY ---
+
+
+CREATE OR REPLACE VIEW VIEW_K_2021136600 AS
+SELECT DISTINCT
+  CASE WHEN n1.numero < n2.numero THEN n1.numero ELSE n2.numero END AS "Numero de telefone 1",
+  CASE WHEN n1.numero < n2.numero THEN n2.numero ELSE n1.numero END AS "Numero de telefone 2",
+  
+  (SELECT COUNT(*)
+   FROM chamada c
+   WHERE c.numero = n1.numero AND c.n_destino = n2.numero AND upper(c.tipo) = 'VOZ'
+      OR c.numero = n2.numero AND c.n_destino = n1.numero AND upper(c.tipo) = 'VOZ') AS "Quantidade de Chamadas",
+    
+  (SELECT COUNT(*)
+   FROM chamada c
+   WHERE c.numero = n1.numero AND c.n_destino = n2.numero AND upper(c.tipo) = 'SMS'
+      OR c.numero = n2.numero AND c.n_destino = n1.numero AND upper(c.tipo) = 'SMS') AS "Quantidade de SMS",
+  
+  ((SELECT COUNT(*)
+    FROM chamada c
+    WHERE c.numero = n1.numero AND c.n_destino = n2.numero AND upper(c.tipo) = 'VOZ'
+       OR c.numero = n2.numero AND c.n_destino = n1.numero AND upper(c.tipo) = 'VOZ')
+   +
+   (SELECT COUNT(*)
+    FROM chamada c
+    WHERE c.numero = n1.numero AND c.n_destino = n2.numero AND upper(c.tipo) = 'SMS'
+       OR c.numero = n2.numero AND c.n_destino = n1.numero AND upper(c.tipo) = 'SMS')
+  ) AS "Total de Chamadas e SMS"
+  
+FROM 
+  num_telefone n1
+  JOIN chamada ch ON n1.numero = ch.numero
+  JOIN num_telefone n2 ON ch.n_destino = n2.numero AND n1.numero <> n2.numero
+  
+ORDER BY 5 DESC;
+
+
+
+
+--- VIEW E ---
+
+create or replace view VIEW_E as
+  select
+    to_char(o.data_inicio, 'Day') as "Dia da semana", 
+    to_char(o.data_inicio, 'HH24') as "Hora",
+    count(*) as "Quantidade Chamadas",
+    trunc(mc."Media Chamadas", 2) as "Media Chamadas", 
+    'Outras Chamadas' as "Tipo chamada"
+  from
+    outras_chamadas o
+    join(
+      select 
+        to_char(data_inicio, 'Day') as "Dia da Semana",
+        to_char(data_inicio, 'HH24') as "Hora",
+        avg(count(*)) over (partition by to_char(data_inicio, 'Day')) as "Media Chamadas"
+      from outras_chamadas
+      group by to_char(data_inicio, 'Day'), to_char(data_inicio, 'HH24')
+    ) mc on to_char(o.data_inicio, 'Day') = mc."Dia da Semana" and to_char(o.data_inicio, 'HH24') = mc."Hora"
+  group by
+    to_char(o.data_inicio, 'Day'), 
+    to_char(o.data_inicio, 'HH24'),
+    mc."Media Chamadas"
+  having
+    count(*) > mc."Media Chamadas"
+    
+  union all
+  
+  select
+    to_char(o.data_inicio, 'Day') as "Dia da semana", 
+    to_char(o.data_inicio, 'HH24') as "Hora",
+    count(*) as "Quantidade Chamadas",
+    trunc(mc."Media Chamadas", 2) as "Media Chamadas", 
+    'Chamada Voz' as "Tipo chamada"
+  from
+    chamada_voz o
+    join(
+      select 
+        to_char(data_inicio, 'Day') as "Dia da Semana",
+        to_char(data_inicio, 'HH24') as "Hora",
+        avg(count(*)) over (partition by to_char(data_inicio, 'Day')) as "Media Chamadas"
+      from chamada_voz
+      group by to_char(data_inicio, 'Day'), to_char(data_inicio, 'HH24')
+    ) mc on to_char(o.data_inicio, 'Day') = mc."Dia da Semana" and to_char(o.data_inicio, 'HH24') = mc."Hora"
+  group by
+    to_char(o.data_inicio, 'Day'), 
+    to_char(o.data_inicio, 'HH24'),
+    mc."Media Chamadas"
+  having
+    count(*) > mc."Media Chamadas"
+  
+  union all
+  
+  select
+    to_char(o.data_envio, 'Day') as "Dia da semana", 
+    to_char(o.data_envio, 'HH24') as "Hora",
+    count(*) as "Quantidade Chamadas",
+    trunc(mc."Media Chamadas", 2) as "Media Chamadas", 
+    'SMS' as "Tipo chamada"
+  from
+    sms o
+    join(
+      select 
+        to_char(data_envio, 'Day') as "Dia da Semana",
+        to_char(data_envio, 'HH24') as "Hora",
+        avg(count(*)) over (partition by to_char(data_envio, 'Day')) as "Media Chamadas"
+      from sms
+      group by to_char(data_envio, 'Day'), to_char(data_envio, 'HH24')
+    ) mc on to_char(o.data_envio, 'Day') = mc."Dia da Semana" and to_char(o.data_envio, 'HH24') = mc."Hora"
+  group by
+    to_char(o.data_envio, 'Day'), 
+    to_char(o.data_envio, 'HH24'),
+    mc."Media Chamadas"
+  having
+    count(*) > mc."Media Chamadas"
+    
+  order by 
+    1, 3 DESC;
+
+
+
+
+--- VIEW F ---
+
+CREATE OR REPLACE VIEW VISTA_F AS
+
+SELECT 
+  cl.nome AS "Nome do Cliente",
+  nt.numero AS "Numero de telefone",
+  to_char(add_months(sysdate, -1), 'YYYY-MM') AS "Ano_Mes",
+  SUM(extract(minute from chv.data_fim - chv.data_inicio)) AS "Quantidade de Minutos",
+  COUNT(DISTINCT chv.id_chamada) AS "Quantidade de Chamadas",
+  COUNT(DISTINCT s.id_chamada) AS "Quantidade de SMS"
+  
+FROM 
+  chamada ch
+  join chamada_voz chv on ch.id_chamada = chv.id_chamada
+  left join sms s on ch.id_chamada = s.id_chamada
+  join num_telefone nt on ch.n_destino = nt.numero
+  join contrato ct on nt.numero = ct.numero
+  join cliente cl on ct.id_cliente = cl.id_cliente
+  
+WHERE 
+  chv.data_inicio >= add_months(trunc(sysdate, 'MM'), -1) 
+  AND chv.data_inicio < trunc(sysdate, 'MM')
+  AND upper(nt.rede) = 'FIXO'
+  AND ROWNUM <= 10
+  
+GROUP BY  
+  cl.nome, nt.numero, to_char(add_months(sysdate, -1), 'YYYY-MM')
+  
+ORDER BY 4 DESC;
+
+
+
+
+--- VISTA G ---
+
+CREATE OR REPLACE VIEW VISTA_G AS
+SELECT 
+  cl.nome AS "Nome do Cliente",
+  SUM(CASE WHEN upper(ta.rede) = 'FIXA' THEN 1 ELSE 0 END) AS "Fixa_QuantChamadas",
+  SUM(CASE WHEN upper(ta.rede) = 'FIXA' THEN ta.valorunidade ELSE 0 END) as "Fixa_TotalPagar",
+  SUM(CASE WHEN upper(ta.rede) = 'MOVEL' THEN 1 ELSE 0 END) as "Movel_QuantChamadas",
+  SUM(CASE WHEN upper(ta.rede) = 'MOVEL' THEN ta.valorunidade ELSE 0 END) as "Movel_TotalPagar"
+  
+FROM 
+  chamada ch
+  left join chamada_voz chv on ch.id_chamada = chv.id_chamada
+  left join sms s on ch.id_chamada = s.id_chamada
+  left join outras_chamadas och on ch.id_chamada = och.id_chamada
+  join num_telefone nt on ch.n_destino = nt.numero
+  join contrato ct on nt.numero = ct.numero
+  join tarifario ta on ct.id_tarifario = ta.id_tarifario
+  join cliente cl on ct.id_cliente = cl.id_cliente
+  
+WHERE 
+  extract(year from nvl(chv.data_inicio, sysdate)) = extract(year from sysdate)
+  and extract(year from nvl(s.data_envio, sysdate)) = extract(year from sysdate)
+  and extract(year from nvl(och.data_inicio, sysdate)) = extract(year from sysdate)
+  
+GROUP BY  
+  cl.nome
+  
+ORDER BY ABS(SUM(CASE WHEN upper(ta.rede) = 'FIXA' THEN 1 ELSE 0 END) - SUM(CASE WHEN upper(ta.rede) = 'MOVEL' THEN 1 ELSE 0 END)) DESC;

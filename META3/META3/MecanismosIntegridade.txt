@@ -1,0 +1,91 @@
+Cliente:
+	-> O email deve estar bem estruturado e existir.
+    	-> A data_nascimento deve ser uma data com pelo menos 18 anos.
+    	-> A morada deve existir.
+    	-> O NIF (Número de Identificação Fiscal) deve existir e estar bem estruturado.
+    	-> O sexo (gênero) deve ser binário, sendo "fêmea" ou "macho".
+    	-> A nacionalidade deve existir.
+
+Contrato:
+    	-> O período_fidelização deve ser em anos.
+    	-> A data_início deve ser anterior à data_cancel de cancelamento.
+	-> Ambas as datas precisam ser anteriores à data atual.
+    	-> O status válido deve estar de acordo com a tabela de cancelamento.
+	-> A duração tem de ser um valor positivo.
+	-> valido tem de ter um valor de 1 ou 0.
+	-> A data_inicio tem de ser antes da data atual.
+
+Cancelamento:
+	-> A data_cancel deve ser posterior à data_início do contrato.
+	-> Ambas as datas precisam ser anteriores à data atual.
+	-> O valor_multa não pode ser negativo;
+
+Num_Telefone:
+    	-> O saldo não pode ser negativo.
+    	-> O min_gastos ao final do mês são redefinidos.
+    	-> O sms_gastos ao final do mês são redefinidos.
+
+Chamada:
+	-> O tipo deve ser coerente com os tipos de chamadas do sistema.
+
+Sms:
+	-> A data_envio deve ser anterior à data_entrega.
+	-> Ambas as datas precisam ser anteriores à data atual.
+
+Outras_chamadas:
+	-> A data_início deve ser anterior à data_fim.
+	-> Ambas as datas precisam ser anteriores à data atual.
+
+Chamada_voz:
+	-> A data_início deve ser anterior à data_fim.
+	-> Ambas as datas precisam ser anteriores à data atual.
+
+Eventos:
+    	-> A data_ini deve ser anterior à data_fim.
+	-> Ambas as datas precisam ser anteriores à data atual.
+    	-> O estado deve ser coerente com os eventos.
+
+Grupo:
+	-> A data_ini deve ser anterior à data_fim.
+	-> Ambas as datas precisam ser anteriores à data atual.
+	-> O n_membros tem de ser positivo.
+	-> O estado precisa ser 1 ou 0.
+
+Campanha:
+    	-> A data_início deve ser anterior à data_fim.
+	-> Ambas as datas precisam ser anteriores à data atual.
+    	-> Os descontos_voz e descontos_sms devem ser de no máximo 100% (percentagem).
+	-> O n_max_amigos precisa ser positivo.
+
+Periodo_faturacao:
+    	-> A data_ini deve ser anterior à data_fim.
+	-> Ambas as datas precisam ser anteriores à data atual.
+    	-> A data deve estar entre a data_ini e a data_fim.
+    	-> O valor não pode ser negativo.
+
+Pacotes:
+    	-> O tipo deve ser coerente com os tipos de chamadas do sistema.
+    	-> O preco_pacote, a quantidade_pacote e a unidade_pacote não podem ser negativos.
+    	-> O período_pacote deve ser em anos.
+	-> A data_lancamento não pode ser posterior à data atual.
+
+Tarifario:
+    	-> O tipo deve ser coerente com os tipos de chamadas do sistema.
+    	-> A rede deve ser coerente com as redes do sistema.
+    	-> A unidade deve ser coerente com o tipo.
+    	-> O valorunidade não pode ser negativo.
+    	-> A data_lançamentot não pode ser posterior à data atual.
+
+Plano_pospago_simples:
+    	-> A data_lancamento não pode ser posterior à data atual.
+    	-> O valor_serviço deve ser positivo.
+
+Plano_prepago:
+	-> O numero_dias, minutos e SMS não podem ser negativos.
+
+Plano_pospago_plafond:
+	-> Os minutos e SMS não podem ter valores negativos.
+
+Carregamento:
+    	-> O valor deve ser positivo.
+    	-> A data de carregamento não pode ser posterior à data atual.
