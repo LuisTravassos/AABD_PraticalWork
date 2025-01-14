@@ -5,7 +5,7 @@
 --  DDL for Trigger I_ATUALIZA_SALDO
 --------------------------------------------------------
 
-  CREATE OR REPLACE TRIGGER "LEIAABDG03"."I_ATUALIZA_SALDO" 
+  CREATE OR REPLACE TRIGGER "SQL_Project"."I_ATUALIZA_SALDO" 
   before insert on eventos
   for each row
   
@@ -26,7 +26,7 @@ declare
 --variaveis  
   saldoMinus float;
   
---exceções  
+--exceï¿½ï¿½es  
   IDchamada exception;
   pragma exception_init(IDchamada, -20514);
   tarCompativel exception;
@@ -38,7 +38,7 @@ begin
   if (upper(:new.estado) = 'CHAMADA TERMINADA') then
   
     for i in c1 loop
-    --chama função B
+    --chama funï¿½ï¿½o B
       saldoMinus := b_custo_da_chamada(i.chID);
       
       --se tiver saldo para pagar o custo da chamada paga
@@ -52,12 +52,12 @@ begin
 
 end;
 /
-ALTER TRIGGER "LEIAABDG03"."I_ATUALIZA_SALDO" ENABLE;
+ALTER TRIGGER "SQL_Project"."I_ATUALIZA_SALDO" ENABLE;
 --------------------------------------------------------
 --  DDL for Trigger L_CARREGA_CARTAO_PREPAGO
 --------------------------------------------------------
 
-  CREATE OR REPLACE TRIGGER "LEIAABDG03"."L_CARREGA_CARTAO_PREPAGO" 
+  CREATE OR REPLACE TRIGGER "SQL_Project"."L_CARREGA_CARTAO_PREPAGO" 
 after insert on carregamento
 for each row
 declare
@@ -73,7 +73,7 @@ declare
   valorpagar float;
   dat date;
 begin
-   -- Verifica se o número de telefone está associado a um plano pré-pago
+   -- Verifica se o nï¿½mero de telefone estï¿½ associado a um plano prï¿½-pago
    select count(ppre.id_plano) into verifica
    from plano_prepago ppre
     join plano_pospago_simples pps on ppre.id_plano = pps.id_plano
@@ -86,12 +86,12 @@ begin
     raise planopre;
    end if;
    
-   -- Obtém o saldo atual do número de telefone
+   -- Obtï¿½m o saldo atual do nï¿½mero de telefone
    select saldo into saldo_atual
    from num_telefone
    where numero = :new.numero;
    
-   -- Obtém a duração do período de faturação do plano pré-pago
+   -- Obtï¿½m a duraï¿½ï¿½o do perï¿½odo de faturaï¿½ï¿½o do plano prï¿½-pago
    select pp.numero_dias, ct.id_contrato into ndias, idcon
    from plano_prepago pp
     join plano_pospago_simples pps on pp.id_plano = pps.id_plano
@@ -100,13 +100,13 @@ begin
     join num_telefone nt on ct.numero = nt.numero
   where nt.numero = :new.numero;
    
-   -- Atualiza o saldo do número de telefone
+   -- Atualiza o saldo do nï¿½mero de telefone
    saldo_atualizado := saldo_atual + :new.valor;
    update num_telefone
    set saldo = saldo_atualizado
    where numero = :new.numero;
    
-   -- Regista o início de um novo período de faturação
+   -- Regista o inï¿½cio de um novo perï¿½odo de faturaï¿½ï¿½o
    select max(id_faturacao) into idf
    from periodo_faturacao;
    
@@ -114,19 +114,19 @@ begin
    dat := sysdate + ndias;
    insert into periodo_faturacao values(idf, idcon,sysdate, dat,10);
    
-   -- Tratamento exceções
+   -- Tratamento exceï¿½ï¿½es
    exception
       when planopre then
         dbms_output.put_line('Erro: Numero nao possui plano pre pago');
    
 end;
 /
-ALTER TRIGGER "LEIAABDG03"."L_CARREGA_CARTAO_PREPAGO" ENABLE;
+ALTER TRIGGER "SQL_Project"."L_CARREGA_CARTAO_PREPAGO" ENABLE;
 --------------------------------------------------------
 --  DDL for Trigger O_TRIG_2021136600_1
 --------------------------------------------------------
 
-  CREATE OR REPLACE TRIGGER "LEIAABDG03"."O_TRIG_2021136600_1" 
+  CREATE OR REPLACE TRIGGER "SQL_Project"."O_TRIG_2021136600_1" 
   after insert or update on chamada
   for each row
 declare
@@ -137,7 +137,7 @@ declare
 begin
 
 --Verifica o tipo de chamada e adiciona na tabela respetiva a entrada
---o trigger é after para se puder ir buscar o id correto
+--o trigger ï¿½ after para se puder ir buscar o id correto
   if (upper(:new.tipo) = 'VOZ') then
     insert into chamada_voz values (:new.id_chamada, sysdate - 0.1, sysdate + 1);
     
@@ -154,12 +154,12 @@ begin
   end if;
 end;
 /
-ALTER TRIGGER "LEIAABDG03"."O_TRIG_2021136600_1" ENABLE;
+ALTER TRIGGER "SQL_Project"."O_TRIG_2021136600_1" ENABLE;
 --------------------------------------------------------
 --  DDL for Trigger O_TRIG_2021136600_2
 --------------------------------------------------------
 
-  CREATE OR REPLACE TRIGGER "LEIAABDG03"."O_TRIG_2021136600_2" 
+  CREATE OR REPLACE TRIGGER "SQL_Project"."O_TRIG_2021136600_2" 
   after insert or update on plano_pospago_simples
   for each row
 declare
@@ -169,7 +169,7 @@ declare
   
 begin
 --Verifica o tipo de chamada e adiciona na tabela respetiva a entrada
---o trigger é after para se puder ir buscar o id correto
+--o trigger ï¿½ after para se puder ir buscar o id correto
   if(INSTR(:new.nome, 'PPP ') > 0) then
     insert into plano_pospago_plafond(id_plano) values (:new.id_plano);
     
@@ -183,12 +183,12 @@ begin
   end if;
 end;
 /
-ALTER TRIGGER "LEIAABDG03"."O_TRIG_2021136600_2" ENABLE;
+ALTER TRIGGER "SQL_Project"."O_TRIG_2021136600_2" ENABLE;
 --------------------------------------------------------
 --  DDL for Trigger O_TRIG_2021139149
 --------------------------------------------------------
 
-  CREATE OR REPLACE TRIGGER "LEIAABDG03"."O_TRIG_2021139149" 
+  CREATE OR REPLACE TRIGGER "SQL_Project"."O_TRIG_2021139149" 
 after insert on cancelamento
 for each row
 begin
@@ -196,16 +196,16 @@ begin
     update contrato set valido = 1 where id_contrato = :new.id_contrato;
 end;
 /
-ALTER TRIGGER "LEIAABDG03"."O_TRIG_2021139149" ENABLE;
+ALTER TRIGGER "SQL_Project"."O_TRIG_2021139149" ENABLE;
 --------------------------------------------------------
 --  DDL for Trigger O_TRIG_2021142527
 --------------------------------------------------------
 
-  CREATE OR REPLACE TRIGGER "LEIAABDG03"."O_TRIG_2021142527" 
+  CREATE OR REPLACE TRIGGER "SQL_Project"."O_TRIG_2021142527" 
 AFTER INSERT ON carregamento
 FOR EACH ROW
 BEGIN
-  --este trigger atualiza o saldo do telemovel cada vez que é efetuado um carregamento
+  --este trigger atualiza o saldo do telemovel cada vez que ï¿½ efetuado um carregamento
   
   
   UPDATE num_telefone num
@@ -213,4 +213,4 @@ BEGIN
   WHERE num.numero = :new.numero;
 END;
 /
-ALTER TRIGGER "LEIAABDG03"."O_TRIG_2021142527" ENABLE;
+ALTER TRIGGER "SQL_Project"."O_TRIG_2021142527" ENABLE;

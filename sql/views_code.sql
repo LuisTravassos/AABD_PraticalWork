@@ -5,7 +5,7 @@
 --  DDL for View VIEW_A
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_A" ("N_CONTRATO", "DATA_CONTRATO", "N_TELEFONE", "Quantidade de Chamadas", "QuantSMS_Enviados", "DURACAO_CHAMADAS") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_A" ("N_CONTRATO", "DATA_CONTRATO", "N_TELEFONE", "Quantidade de Chamadas", "QuantSMS_Enviados", "DURACAO_CHAMADAS") AS 
   SELECT 
     c.ID_CONTRATO AS N_Contrato,
     c.DATA_INICIO AS Data_Contrato,
@@ -37,7 +37,7 @@ HAVING
 --  DDL for View VIEW_B
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_B" ("PLANO", "NUM_CLIENTE", "DATA_CONTRATO", "PERIODO_FIDELIZACAO", "N_MEDIO_CHAMADAS_3MESES", "N_MEDIO_MENSAL_TOTAL_PERIODO") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_B" ("PLANO", "NUM_CLIENTE", "DATA_CONTRATO", "PERIODO_FIDELIZACAO", "N_MEDIO_CHAMADAS_3MESES", "N_MEDIO_MENSAL_TOTAL_PERIODO") AS 
   SELECT a.ID_PLANO AS Plano, 
        co.ID_CLIENTE AS Num_Cliente, 
        co.DATA_INICIO AS Data_Contrato,
@@ -64,7 +64,7 @@ ORDER BY N_Medio_mensal_total_periodo DESC;
 --  DDL for View VIEW_C
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_C" ("CONTRATO", "PLANO", "NOME", "CIDADE", "TELEFONE", "DESTINO", "PERCENTAGEM", "NUM_CHAMADAS", "NUM_CHAMADAS_TOTAL") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_C" ("CONTRATO", "PLANO", "NOME", "CIDADE", "TELEFONE", "DESTINO", "PERCENTAGEM", "NUM_CHAMADAS", "NUM_CHAMADAS_TOTAL") AS 
   SELECT
       t.a1 AS Contrato,
       t.a2 AS PLANO,
@@ -115,7 +115,7 @@ ORDER BY
 --  DDL for View VIEW_D
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_D" ("Ano_Mes", "Plano", "quantidade_novos_contratos", "quant_contratos_terminados") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_D" ("Ano_Mes", "Plano", "quantidade_novos_contratos", "quant_contratos_terminados") AS 
   SELECT 
     to_char(add_months(C.DATA_INICIO, 0), 'YYYY-MM') AS "Ano_Mes",
     ad.ID_PLANO AS "Plano",
@@ -136,7 +136,7 @@ ORDER BY 1 ASC, 3 DESC;
 --  DDL for View VIEW_E
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_E" ("Dia da semana", "Hora", "Quantidade Chamadas", "Media Chamadas", "Tipo chamada") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_E" ("Dia da semana", "Hora", "Quantidade Chamadas", "Media Chamadas", "Tipo chamada") AS 
   select
     to_char(o.data_inicio, 'Day') as "Dia da semana", 
     to_char(o.data_inicio, 'HH24') as "Hora",
@@ -216,7 +216,7 @@ ORDER BY 1 ASC, 3 DESC;
 --  DDL for View VIEW_K_2021136600
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_K_2021136600" ("Numero de telefone 1", "Numero de telefone 2", "Quantidade de Chamadas", "Quantidade de SMS", "Total de Chamadas e SMS") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_K_2021136600" ("Numero de telefone 1", "Numero de telefone 2", "Quantidade de Chamadas", "Quantidade de SMS", "Total de Chamadas e SMS") AS 
   SELECT DISTINCT
   CASE WHEN n1.numero < n2.numero THEN n1.numero ELSE n2.numero END AS "Numero de telefone 1",
   CASE WHEN n1.numero < n2.numero THEN n2.numero ELSE n1.numero END AS "Numero de telefone 2",
@@ -252,7 +252,7 @@ ORDER BY 5 DESC;
 --  DDL for View VIEW_K_2021139149
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_K_2021139149" ("ID_CLIENTE", "N_CONTRATOS_PRE_PAGOS", "N_CONTRATOS_POS_PAGOS_PLAFOND", "N_CONTRATOS_POS_PAGOS_SIMPLES") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_K_2021139149" ("ID_CLIENTE", "N_CONTRATOS_PRE_PAGOS", "N_CONTRATOS_POS_PAGOS_PLAFOND", "N_CONTRATOS_POS_PAGOS_SIMPLES") AS 
   SELECT
     c.id_cliente,
     COUNT( CASE WHEN ppr.id_plano IS NOT NULL THEN c.id_contrato END) AS n_contratos_pre_pagos,
@@ -271,7 +271,7 @@ GROUP BY c.id_cliente;
 --  DDL for View VIEW_K_2021142527
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_K_2021142527" ("MES_CANCEL", "NOME_CLIENTE", "ID_CONTRATO", "ID_CANCELAMENTO") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_K_2021142527" ("MES_CANCEL", "NOME_CLIENTE", "ID_CONTRATO", "ID_CANCELAMENTO") AS 
   select
     EXTRACT(MONTH FROM canc.data_cancel) as mes_cancel,
     cl.nome as nome_cliente,
@@ -291,7 +291,7 @@ GROUP BY c.id_cliente;
 --  DDL for View VIEW_L_2021136600
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_L_2021136600" ("Nome do Cliente", "ID do Cliente", "Tarifario_TotalPagar", "Plano_TotalPagar", "Total sem descontos") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_L_2021136600" ("Nome do Cliente", "ID do Cliente", "Tarifario_TotalPagar", "Plano_TotalPagar", "Total sem descontos") AS 
   SELECT DISTINCT 
   cl.nome AS "Nome do Cliente",
   cl.id_cliente AS "ID do Cliente",
@@ -330,7 +330,7 @@ ORDER BY 5 DESC;
 --  DDL for View VIEW_L_2021139149
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_L_2021139149" ("ID_CLIENTE", "N_DESTINOS_LIGADOS", "N_CHAMADAS_VOZ", "DURACAO_TOTAL_MINUTOS", "MEDIA", "N_SMS_ENVIADOS") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_L_2021139149" ("ID_CLIENTE", "N_DESTINOS_LIGADOS", "N_CHAMADAS_VOZ", "DURACAO_TOTAL_MINUTOS", "MEDIA", "N_SMS_ENVIADOS") AS 
   SELECT 
        co.id_cliente AS ID_CLIENTE, 
        COUNT(ch.n_destino) AS N_DESTINOS_LIGADOS,
@@ -357,7 +357,7 @@ GROUP BY co.id_cliente;
 --  DDL for View VIEW_L_2021142527
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VIEW_L_2021142527" ("TIPO_PLANO", "QUANT_PLANOS", "AVG_MINUTOS", "AVG_SMS") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VIEW_L_2021142527" ("TIPO_PLANO", "QUANT_PLANOS", "AVG_MINUTOS", "AVG_SMS") AS 
   select 
 'Pospago Plafond' AS tipo_plano,
   count(ppp.ID_PLANO) AS QUANT_PLANOS,avg(ppp.minutos) as AVG_MINUTOS, avg(ppp.sms) as AVG_sms
@@ -378,7 +378,7 @@ GROUP BY co.id_cliente;
 --  DDL for View VISTA_F
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VISTA_F" ("Nome do Cliente", "Numero de telefone", "Ano_Mes", "Quantidade de Minutos", "Quantidade de Chamadas", "Quantidade de SMS") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VISTA_F" ("Nome do Cliente", "Numero de telefone", "Ano_Mes", "Quantidade de Minutos", "Quantidade de Chamadas", "Quantidade de SMS") AS 
   SELECT 
   cl.nome AS "Nome do Cliente",
   nt.numero AS "Numero de telefone",
@@ -410,7 +410,7 @@ ORDER BY 4 DESC;
 --  DDL for View VISTA_G
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VISTA_G" ("Nome do Cliente", "Fixa_QuantChamadas", "Fixa_TotalPagar", "Movel_QuantChamadas", "Movel_TotalPagar") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VISTA_G" ("Nome do Cliente", "Fixa_QuantChamadas", "Fixa_TotalPagar", "Movel_QuantChamadas", "Movel_TotalPagar") AS 
   SELECT 
   cl.nome AS "Nome do Cliente",
   SUM(CASE WHEN upper(ta.rede) = 'FIXA' THEN 1 ELSE 0 END) AS "Fixa_QuantChamadas",
@@ -441,7 +441,7 @@ ORDER BY ABS(SUM(CASE WHEN upper(ta.rede) = 'FIXA' THEN 1 ELSE 0 END) - SUM(CASE
 --  DDL for View VISTA_H
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VISTA_H" ("ID_PLANO", "QTD_CHAMADAS", "QUANT_MINUTO", "CUSTO_CHAMADA", "QUANT_SMS", "CUSTO_SMS") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VISTA_H" ("ID_PLANO", "QTD_CHAMADAS", "QUANT_MINUTO", "CUSTO_CHAMADA", "QUANT_SMS", "CUSTO_SMS") AS 
   select 
   CP.ID_PLANO,
   SUM( CASE WHEN UPPER(ch.TIPO) = 'VOZ' THEN 1 ELSE 0 END) AS QTD_CHAMADAS,
@@ -468,7 +468,7 @@ from
 --  DDL for View VISTA_I
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VISTA_I" ("Mes", "Plano", "Quant_Minutos_PLano", "Quant_Minutos_Utilizado", "Percentagem_Utilizacao") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VISTA_I" ("Mes", "Plano", "Quant_Minutos_PLano", "Quant_Minutos_Utilizado", "Percentagem_Utilizacao") AS 
   SELECT 
   EXTRACT(MONTH FROM ct.DATA_INICIO) AS "Mes",
   pps.nome AS "Plano",
@@ -496,7 +496,7 @@ ORDER BY 1 DESC, 5 ASC;
 --  DDL for View VISTA_J
 --------------------------------------------------------
 
-  CREATE OR REPLACE FORCE VIEW "LEIAABDG03"."VISTA_J" ("ID_CAMPANHA", "Quantidade de Chamadas") AS 
+  CREATE OR REPLACE FORCE VIEW "SQL_Project"."VISTA_J" ("ID_CAMPANHA", "Quantidade de Chamadas") AS 
   select 
     CAM.ID_CAMPANHA,
     COUNT(CASE WHEN 

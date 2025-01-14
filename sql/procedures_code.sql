@@ -6,7 +6,7 @@
 --------------------------------------------------------
 set define off;
 
-  CREATE OR REPLACE PROCEDURE "LEIAABDG03"."A_EMITE_FATURA" (
+  CREATE OR REPLACE PROCEDURE "SQL_Project"."A_EMITE_FATURA" (
     nTelefone varchar2,
     anoMes varchar2 --formato "yyyy-mm"
 ) is
@@ -124,7 +124,7 @@ begin
   
   --verifica se dados de fatura ja existem  
   if(helper > 0) then
-    raise_application_error(-20510, 'Fatura já foi emitida');
+    raise_application_error(-20510, 'Fatura jï¿½ foi emitida');
   else
     --insersao no tabela fatura
     insert into fatura values (custoChamadasTotal, 
@@ -143,7 +143,7 @@ end;
 --------------------------------------------------------
 set define off;
 
-  CREATE OR REPLACE PROCEDURE "LEIAABDG03"."F_ENVIA_SMS" (num_de_origem VARCHAR, num_de_destino VARCHAR, mensagem VARCHAR)
+  CREATE OR REPLACE PROCEDURE "SQL_Project"."F_ENVIA_SMS" (num_de_origem VARCHAR, num_de_destino VARCHAR, mensagem VARCHAR)
 IS
   NumInexistente exception;
     pragma exception_init (NumInexistente, -20501);
@@ -203,7 +203,7 @@ BEGIN
       raise NumInexistente;
     END IF;
     
-    -- Verifica se o numero de destino é valido
+    -- Verifica se o numero de destino ï¿½ valido
     SELECT count(nt.numero) INTO verificacao
     FROM  num_telefone nt
     WHERE nt.numero = num_de_destino;
@@ -212,7 +212,7 @@ BEGIN
       raise NumInvalido;
     END IF;
     
-    -- Verifica se numero de origem está inativo
+    -- Verifica se numero de origem estï¿½ inativo
     FOR r IN c1
     LOOP
       SELECT count(cm.id_contrato) INTO verificacao
@@ -263,7 +263,7 @@ BEGIN
          dbms_output.put_line('Plano pre pago com ' ||valor|| ' ja gastou ' ||smsGastos);
       else
         -- ver valorunidade do tarifario
-          --se saldo < valorunidade lança excecao senao envia
+          --se saldo < valorunidade lanï¿½a excecao senao envia
           select t.unidade, t.valorunidade, nt.saldo into unid, valorunid, saldo
           from tarifario t
               join contrato ct on t.id_tarifario = ct.id_tarifario
@@ -287,7 +287,7 @@ BEGIN
          dbms_output.put_line('Plano pre pago com ' ||valor|| ' ja gastou ' ||smsGastos);
       else
         -- ver valorunidade do tarifario
-          --se saldo < valorunidade lança excecao senao envia
+          --se saldo < valorunidade lanï¿½a excecao senao envia
           select t.unidade, t.valorunidade, nt.saldo into unid, valorunid, saldo
           from tarifario t
               join contrato ct on t.id_tarifario = ct.id_tarifario
@@ -349,11 +349,11 @@ BEGIN
       when NumInexistente then
         dbms_output.put_line('Erro: Numero de origem inexistente');
       when NumInvalido then
-        dbms_output.put_line('Erro: Número de destino inválido.');
+        dbms_output.put_line('Erro: Nï¿½mero de destino invï¿½lido.');
       when NumInativo then
-        dbms_output.put_line('Erro: Número de origem inativo.');
+        dbms_output.put_line('Erro: Nï¿½mero de origem inativo.');
       when ServIndes then
-        dbms_output.put_line('Erro: Serviço indisponível.');
+        dbms_output.put_line('Erro: Serviï¿½o indisponï¿½vel.');
       when NumSemSaldo then
         dbms_output.put_line('Erro: Telefone sem saldo.');
       
@@ -366,15 +366,15 @@ END;
 --------------------------------------------------------
 set define off;
 
-  CREATE OR REPLACE PROCEDURE "LEIAABDG03"."G_ESTABELECE_CHAMADA" (
+  CREATE OR REPLACE PROCEDURE "SQL_Project"."G_ESTABELECE_CHAMADA" (
   num_de_origem varchar2,
   num_de_destino varchar2
 ) is
 
-/*Existe a declaraçao de duas sequencias que podem ser necessario
-ser lançadas/relançadas*/
+/*Existe a declaraï¿½ao de duas sequencias que podem ser necessario
+ser lanï¿½adas/relanï¿½adas*/
 
---inicia os erros, irá ser lançada a função D so para os erros
+--inicia os erros, irï¿½ ser lanï¿½ada a funï¿½ï¿½o D so para os erros
   NumInexistente exception;
     pragma exception_init (NumInexistente, -20501);
   NumInvalido exception;
@@ -447,11 +447,11 @@ end;
 --------------------------------------------------------
 set define off;
 
-  CREATE OR REPLACE PROCEDURE "LEIAABDG03"."K_NOVO_CONTRATO" (
+  CREATE OR REPLACE PROCEDURE "SQL_Project"."K_NOVO_CONTRATO" (
     nif1 VARCHAR, 
     nome1 VARCHAR, 
     plano VARCHAR, 
-    tarifario VARCHAR, --necessario devido à nossa tabela contrato 
+    tarifario VARCHAR, --necessario devido ï¿½ nossa tabela contrato 
     periodo_meses NUMBER
 ) IS
     
@@ -491,7 +491,7 @@ set define off;
     idpp number;
 BEGIN
 
-    -- Verifica se o cliente é válido
+    -- Verifica se o cliente ï¿½ vï¿½lido
     select count(id_cliente), c.nome, c.id_cliente into verificacao, nomeCli, idCli
     from cliente c
     where c.nif = nif1 and upper(c.nome) = upper(nome1)
@@ -501,7 +501,7 @@ BEGIN
       raise nifCliente;
     end if;
     
-    -- Verifica se o plano é válido
+    -- Verifica se o plano ï¿½ vï¿½lido
     
     for r in c1 loop
       dados := true;
@@ -515,7 +515,7 @@ BEGIN
       raise planoInexis;
     end if;
     
-    -- verifica se tarifario é válido
+    -- verifica se tarifario ï¿½ vï¿½lido
     dados := false;
     for k in c2 loop
       dados := true;
@@ -526,12 +526,12 @@ BEGIN
       raise tarifarioInv;
     end if;
     
-    -- Verifica se o período é válido
+    -- Verifica se o perï¿½odo ï¿½ vï¿½lido
     if periodo_meses <= 0 then
       raise periodoInvalido;
     end if;
     
-    -- Gera um novo número de telefone não atribuído
+    -- Gera um novo nï¿½mero de telefone nï¿½o atribuï¿½do
     select max(numero) into newNumero
     from num_telefone;
     newNumero := newNumero + 1;
@@ -556,7 +556,7 @@ BEGIN
     insert into num_telefone values(newNumero,0,0,0);
     insert into contrato values(newIDContrato,idtarif ,newNumero,idCli,periodo_meses,sysdate,1);
     insert into associado values(newIDContrato, idpp);
-    -- Regista o início do período de faturação
+    -- Regista o inï¿½cio do perï¿½odo de faturaï¿½ï¿½o
     
     -- Envia o SMS de boas-vindas
     msgBoasVindas := 'Bem vindo '|| nomeCli;
@@ -564,19 +564,19 @@ BEGIN
     
     insert into chamada values(newIdChamada,393549708,newNumero, 'SMS');
     insert into sms values(newIdChamada, sysdate, sysdate, msgBoasVindas);
-    -- Tratamento das exceções
+    -- Tratamento das exceï¿½ï¿½es
     EXCEPTION
       
       when nifCliente then
-        dbms_output.put_line('Erro: Nif inválido.');
+        dbms_output.put_line('Erro: Nif invï¿½lido.');
       when planoInexis then
         dbms_output.put_line('Erro: Plano inexistente.');
       when planoInvalid then
-        dbms_output.put_line('Erro: Plano inválido.');
+        dbms_output.put_line('Erro: Plano invï¿½lido.');
       when periodoInvalido then
-        dbms_output.put_line('Erro: Periodo inválido.');
+        dbms_output.put_line('Erro: Periodo invï¿½lido.');
       when tarifarioInv then
-        dbms_output.put_line('Erro: Tarifário inexistente.');
+        dbms_output.put_line('Erro: Tarifï¿½rio inexistente.');
   
 END;
 
@@ -586,12 +586,12 @@ END;
 --------------------------------------------------------
 set define off;
 
-  CREATE OR REPLACE PROCEDURE "LEIAABDG03"."N_PROC_2021136600" (
+  CREATE OR REPLACE PROCEDURE "SQL_Project"."N_PROC_2021136600" (
   idGrupo number,
   numTele varchar2
 ) is
 
---exceções
+--exceï¿½ï¿½es
   NumInexistente exception;
     pragma exception_init (NumInexistente, -20501);
   NumInvalido exception;
@@ -624,7 +624,7 @@ set define off;
   dados boolean := false;
   
 begin
---usar a funcao D para lanças as exceçoes
+--usar a funcao D para lanï¿½as as exceï¿½oes
   helper1 := D_TIPO_DE_CHAMADA_VOZ(numTele);
   
   select count(id_grupo) into helper2
@@ -651,7 +651,7 @@ begin
   for i in c1 loop
     dados := true;
 
---se houver espaço para adicionar o numero adiciona-se    
+--se houver espaï¿½o para adicionar o numero adiciona-se    
     if (i.adIdGroup < i.grMembros) then
       insert into adere values(idGrupo, numTele);
     else
@@ -672,7 +672,7 @@ end;
 --------------------------------------------------------
 set define off;
 
-  CREATE OR REPLACE PROCEDURE "LEIAABDG03"."N_PROC_2021139149" (numer number, valorCarregamento number)
+  CREATE OR REPLACE PROCEDURE "SQL_Project"."N_PROC_2021139149" (numer number, valorCarregamento number)
 is
   cursor c1 is
       select count(nt.numero) as counter
@@ -717,7 +717,7 @@ begin
     end loop;
     
     if planopre = false then
-      raise_application_error(-20522, 'Numero de telefone ' ||numer|| ' não possui plano pre pago.');
+      raise_application_error(-20522, 'Numero de telefone ' ||numer|| ' nï¿½o possui plano pre pago.');
     end if;
     
     -- efetuar carregamento 
@@ -734,7 +734,7 @@ end;
 --------------------------------------------------------
 set define off;
 
-  CREATE OR REPLACE PROCEDURE "LEIAABDG03"."N_PROC_2021142527" (
+  CREATE OR REPLACE PROCEDURE "SQL_Project"."N_PROC_2021142527" (
   p_id_contrato contrato.id_contrato%TYPE,
   p_motivo cancelamento.motivo%TYPE,
   p_valor_multa cancelamento.valor_multa%TYPE)

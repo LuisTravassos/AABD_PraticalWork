@@ -5,11 +5,11 @@
 --  DDL for Function B_CUSTO_DA_CHAMADA
 --------------------------------------------------------
 
-  CREATE OR REPLACE FUNCTION "LEIAABDG03"."B_CUSTO_DA_CHAMADA" (
+  CREATE OR REPLACE FUNCTION "SQL_Project"."B_CUSTO_DA_CHAMADA" (
   idChamada number
 ) return float is
 
-/*Cursor para receber tudo associado à chamada,
+/*Cursor para receber tudo associado ï¿½ chamada,
 so deve retornar uma linha de resultados*/
   cursor c1 is
     select 
@@ -43,7 +43,7 @@ so deve retornar uma linha de resultados*/
       join aplicavel ap on ta.ID_TARIFARIO = ap.ID_TARIFARIO
       and pps.ID_PLANO = ap.ID_PLANO
       
-    where --verificar se o numero está a 100%
+    where --verificar se o numero estï¿½ a 100%
       ch.id_chamada = idChamada
       and ta.ESTADO = 1
       and pps.ESTADO = 1;
@@ -83,14 +83,14 @@ begin
   where ID_CHAMADA = idChamada;
   
   if (helper <= 0) then
-    raise_application_error(-20514, 'Inválido Identificador de chamada: '||idChamada);
+    raise_application_error(-20514, 'Invï¿½lido Identificador de chamada: '||idChamada);
   end if;
  
  --inicio loop c1
   for i in c1 loop
     dados := true;
 
---verifica se a chamada é do tipo do tarifario, se nao for acusa erro
+--verifica se a chamada ï¿½ do tipo do tarifario, se nao for acusa erro
 --calcula o valor a pagar pelo tarifario, valor*minutos
     if(upper(i.taTipo) = upper(i.chTipo)) then
 
@@ -172,7 +172,7 @@ end;
 --  DDL for Function C_PRECO_POR_MINUTO
 --------------------------------------------------------
 
-  CREATE OR REPLACE FUNCTION "LEIAABDG03"."C_PRECO_POR_MINUTO" (tel_origem NUMBER, tel_destino NUMBER) 
+  CREATE OR REPLACE FUNCTION "SQL_Project"."C_PRECO_POR_MINUTO" (tel_origem NUMBER, tel_destino NUMBER) 
 RETURN NUMBER IS
       
       cursor c1 is
@@ -220,7 +220,7 @@ BEGIN
       RAISE_APPLICATION_ERROR(-20501, 'Numero de telefone ' ||tel_origem|| ' inexistente.');
     end if;
     
-    -- verifica se numero de destino é valido
+    -- verifica se numero de destino ï¿½ valido
     select count(nt.numero) into verificacao
     from  num_telefone nt
     where nt.numero = tel_destino;
@@ -228,7 +228,7 @@ BEGIN
     if verificacao = 0 then
       RAISE_APPLICATION_ERROR(-20502, 'Invalido numero de telefone');
     end if;
-    -- verifica se o numero de destino está inativo
+    -- verifica se o numero de destino estï¿½ inativo
     for r in c1
     loop
       select count(cm.id_contrato) into verificacao
@@ -237,7 +237,7 @@ BEGIN
       where ct.id_contrato = r.ncontrato;
       
       if r.ncontra_feitos = verificacao then
-        RAISE_APPLICATION_ERROR(-20511, 'O numero ' ||tel_destino|| ' está inativo');
+        RAISE_APPLICATION_ERROR(-20511, 'O numero ' ||tel_destino|| ' estï¿½ inativo');
       end if;
     end loop;
     
@@ -274,14 +274,14 @@ BEGIN
     where numero = tel_origem;
     
     -- consoante o plano que tiver vai ver se tem ainda minutos de chamadas para gastar
-    -- ou se tem de ser aplicado valor do tarifário
+    -- ou se tem de ser aplicado valor do tarifï¿½rio
     if pprepago then
       if minGastos < valor then
          preco_pagar := 0;
          dbms_output.put_line('Plano pre pago com ' ||valor|| ' minutos ja gastou ' ||minGastos);
       else
         -- ver valorunidade do tarifario
-          --se saldo < valorunidade lança excecao senao envia
+          --se saldo < valorunidade lanï¿½a excecao senao envia
           select t.unidade, t.valorunidade, nt.saldo into unid, valorunid, saldo
           from tarifario t
               join contrato ct on t.id_tarifario = ct.id_tarifario
@@ -295,7 +295,7 @@ BEGIN
                 preco_pagar := valorunid;
               end if;
           else
-              RAISE_APPLICATION_ERROR(-20507, 'Serviço indisponivel');
+              RAISE_APPLICATION_ERROR(-20507, 'Serviï¿½o indisponivel');
           end if;
       end if;
       
@@ -306,7 +306,7 @@ BEGIN
          dbms_output.put_line('Plano pos pago plafond com ' ||valor|| ' minutos ja gastou ' ||minGastos);
       else
         -- ver valorunidade do tarifario
-          --se saldo < valorunidade lança excecao senao envia
+          --se saldo < valorunidade lanï¿½a excecao senao envia
           select t.unidade, t.valorunidade, nt.saldo into unid, valorunid, saldo
           from tarifario t
               join contrato ct on t.id_tarifario = ct.id_tarifario
@@ -320,7 +320,7 @@ BEGIN
                 preco_pagar := valorunid;
               end if;
           else
-              RAISE_APPLICATION_ERROR(-20507, 'Serviço indisponivel');
+              RAISE_APPLICATION_ERROR(-20507, 'Serviï¿½o indisponivel');
           end if;
       end if;
       
@@ -338,7 +338,7 @@ BEGIN
                 preco_pagar := valorunid;
               end if;
           else
-              RAISE_APPLICATION_ERROR(-20507, 'Serviço indisponivel');
+              RAISE_APPLICATION_ERROR(-20507, 'Serviï¿½o indisponivel');
           end if;
     else 
       dbms_output.put_line('Nenhum plano');
@@ -355,7 +355,7 @@ BEGIN
                 preco_pagar := valorunid;
               end if;
           else
-              RAISE_APPLICATION_ERROR(-20507, 'Serviço indisponivel');
+              RAISE_APPLICATION_ERROR(-20507, 'Serviï¿½o indisponivel');
           end if;
     end if;
     
@@ -367,7 +367,7 @@ END;
 --  DDL for Function D_TIPO_DE_CHAMADA_VOZ
 --------------------------------------------------------
 
-  CREATE OR REPLACE FUNCTION "LEIAABDG03"."D_TIPO_DE_CHAMADA_VOZ" (
+  CREATE OR REPLACE FUNCTION "SQL_Project"."D_TIPO_DE_CHAMADA_VOZ" (
   num_telefone varchar2
 ) return varchar2 is
 --variaveis
@@ -380,12 +380,12 @@ begin
   where NUMERO = num_telefone;
   
   if(helper <= 0) then
-    raise_application_error(-20501, 'Número de telefone '||num_telefone||' inexistente.');
+    raise_application_error(-20501, 'Nï¿½mero de telefone '||num_telefone||' inexistente.');
   end if;
   
---verifica se é so composto por numeros  
+--verifica se ï¿½ so composto por numeros  
   if( not REGEXP_LIKE(num_telefone, '^[0-9]+$')) then
-    raise_application_error(-20502, ' Invalido Número de telefone '||num_telefone);
+    raise_application_error(-20502, ' Invalido Nï¿½mero de telefone '||num_telefone);
   end if;
   
 --verifica se existe um contrato ativo anexado ao numero  
@@ -413,7 +413,7 @@ begin
     and ta.estado = 1;
     
   if(helper <= 0) then
-    raise_application_error(-20505, 'Tarifário não ativo.');
+    raise_application_error(-20505, 'Tarifï¿½rio nï¿½o ativo.');
   end if;
 
 --retorna o tipo  
@@ -453,13 +453,13 @@ end;
 --  DDL for Function E_NUMERO_NORMALIZADO
 --------------------------------------------------------
 
-  CREATE OR REPLACE FUNCTION "LEIAABDG03"."E_NUMERO_NORMALIZADO" (num_telefone VARCHAR)
+  CREATE OR REPLACE FUNCTION "SQL_Project"."E_NUMERO_NORMALIZADO" (num_telefone VARCHAR)
 RETURN VARCHAR
 IS
   v_numero_normalizado VARCHAR(255); 
 BEGIN
 
-  --Remover espaços brancos e indicadores internacionais
+  --Remover espaï¿½os brancos e indicadores internacionais
   v_numero_normalizado := REGEXP_REPLACE(num_telefone, '[[:space:]-]', '');
 
   -- ver se o numero tem o indicativo portugues
@@ -476,7 +476,7 @@ END;
 --  DDL for Function H_PODE_REALIZAR_A_CHAMADA
 --------------------------------------------------------
 
-  CREATE OR REPLACE FUNCTION "LEIAABDG03"."H_PODE_REALIZAR_A_CHAMADA" (
+  CREATE OR REPLACE FUNCTION "SQL_Project"."H_PODE_REALIZAR_A_CHAMADA" (
   num_de_origem IN contrato.numero%TYPE,
   num_de_destino IN VARCHAR2
 ) RETURN VARCHAR2
@@ -485,16 +485,16 @@ IS
   saldo NUMBER;
   tipo_rede VARCHAR2(100);
 BEGIN
-  -- Verificar se o número de origem existe
+  -- Verificar se o nï¿½mero de origem existe
   SELECT COUNT(*) INTO num_telef
   FROM contrato ct
   WHERE ct.numero = num_de_origem;
 
   IF num_telef = 0 THEN
-    RAISE_APPLICATION_ERROR(-20502, 'Número de telefone inválido.');
+    RAISE_APPLICATION_ERROR(-20502, 'Nï¿½mero de telefone invï¿½lido.');
   END IF;
 
-  -- Verificar o saldo do número de origem
+  -- Verificar o saldo do nï¿½mero de origem
   SELECT num.saldo INTO saldo
   FROM num_telefone num
   JOIN contrato ct ON num.numero = ct.numero
@@ -514,7 +514,7 @@ END;
 --  DDL for Function J_GET_SALDO
 --------------------------------------------------------
 
-  CREATE OR REPLACE FUNCTION "LEIAABDG03"."J_GET_SALDO" (p_numero VARCHAR, tipo VARCHAR) 
+  CREATE OR REPLACE FUNCTION "SQL_Project"."J_GET_SALDO" (p_numero VARCHAR, tipo VARCHAR) 
 RETURN NUMBER
 IS
   v_numero NUMBER;
@@ -573,7 +573,7 @@ END;
 --  DDL for Function M_FUNC_2021136600
 --------------------------------------------------------
 
-  CREATE OR REPLACE FUNCTION "LEIAABDG03"."M_FUNC_2021136600" (
+  CREATE OR REPLACE FUNCTION "SQL_Project"."M_FUNC_2021136600" (
   idPlano number,
   idTarifario number,
   associar varchar2
@@ -591,7 +591,7 @@ begin
 
 --verifica se existe tarifario  
   if (helper <= 0) then
-    raise_application_error(-20503, 'Tarifário inexistente.');
+    raise_application_error(-20503, 'Tarifï¿½rio inexistente.');
   end if;
   
   select count(id_plano) into helper
@@ -629,7 +629,7 @@ end;
 --  DDL for Function M_FUNC_2021138149
 --------------------------------------------------------
 
-  CREATE OR REPLACE FUNCTION "LEIAABDG03"."M_FUNC_2021138149" (numer number)
+  CREATE OR REPLACE FUNCTION "SQL_Project"."M_FUNC_2021138149" (numer number)
 return number is
     minGastos number;
     
@@ -640,7 +640,7 @@ return number is
       group by nt.min_gastos;
     
 begin
-    -- verificar se numero introduzido é valido
+    -- verificar se numero introduzido ï¿½ valido
     for r in c1 loop
       if r.counter = 0 then
         raise_application_error(-20501, 'Numero de telefone ' ||numer|| ' inexistente.');
@@ -657,7 +657,7 @@ end;
 --  DDL for Function M_FUNC_2021142527
 --------------------------------------------------------
 
-  CREATE OR REPLACE FUNCTION "LEIAABDG03"."M_FUNC_2021142527" (
+  CREATE OR REPLACE FUNCTION "SQL_Project"."M_FUNC_2021142527" (
   p_id_contrato NUMBER,
   p_mes DATE
   )
@@ -724,9 +724,9 @@ BEGIN
     
     EXIT WHEN c1%NOTFOUND;
     
-    v_preco_chamada := b_custo_da_chamada(v_id_chamada) - v_desc_voz; -- Chamada da função b_custo_da_chamada
+    v_preco_chamada := b_custo_da_chamada(v_id_chamada) - v_desc_voz; -- Chamada da funï¿½ï¿½o b_custo_da_chamada
     
-    v_preco_total := v_preco_total + v_preco_chamada; -- Acumular o preço da chamada
+    v_preco_total := v_preco_total + v_preco_chamada; -- Acumular o preï¿½o da chamada
     
     END LOOP;
   
