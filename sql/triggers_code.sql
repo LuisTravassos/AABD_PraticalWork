@@ -11,7 +11,6 @@
   
 declare
 
---cursor para obter a chamada e os dados do numero associado ao evento
   cursor c1 is
     select
       ch.id_chamada as chID,
@@ -22,11 +21,9 @@ declare
       join num_telefone nt on ch.numero = nt.numero
     where
       ch.id_chamada = :new.id_chamada;
-  
---variaveis  
+    
   saldoMinus float;
   
---exce��es  
   IDchamada exception;
   pragma exception_init(IDchamada, -20514);
   tarCompativel exception;
@@ -34,14 +31,11 @@ declare
   
 begin
 
---so se o evento for de termino de chamada
   if (upper(:new.estado) = 'CHAMADA TERMINADA') then
   
     for i in c1 loop
-    --chama fun��o B
       saldoMinus := b_custo_da_chamada(i.chID);
       
-      --se tiver saldo para pagar o custo da chamada paga
       if(i.ntSaldo >= saldoMinus) then
         update num_telefone
           set saldo = saldo - saldoMinus
@@ -73,7 +67,6 @@ declare
   valorpagar float;
   dat date;
 begin
-   -- Verifica se o n�mero de telefone est� associado a um plano pr�-pago
    select count(ppre.id_plano) into verifica
    from plano_prepago ppre
     join plano_pospago_simples pps on ppre.id_plano = pps.id_plano
@@ -86,12 +79,10 @@ begin
     raise planopre;
    end if;
    
-   -- Obt�m o saldo atual do n�mero de telefone
    select saldo into saldo_atual
    from num_telefone
    where numero = :new.numero;
    
-   -- Obt�m a dura��o do per�odo de fatura��o do plano pr�-pago
    select pp.numero_dias, ct.id_contrato into ndias, idcon
    from plano_prepago pp
     join plano_pospago_simples pps on pp.id_plano = pps.id_plano
@@ -100,13 +91,11 @@ begin
     join num_telefone nt on ct.numero = nt.numero
   where nt.numero = :new.numero;
    
-   -- Atualiza o saldo do n�mero de telefone
    saldo_atualizado := saldo_atual + :new.valor;
    update num_telefone
    set saldo = saldo_atualizado
    where numero = :new.numero;
    
-   -- Regista o in�cio de um novo per�odo de fatura��o
    select max(id_faturacao) into idf
    from periodo_faturacao;
    
@@ -114,7 +103,6 @@ begin
    dat := sysdate + ndias;
    insert into periodo_faturacao values(idf, idcon,sysdate, dat,10);
    
-   -- Tratamento exce��es
    exception
       when planopre then
         dbms_output.put_line('Erro: Numero nao possui plano pre pago');
@@ -131,13 +119,8 @@ ALTER TRIGGER "SQL_Project"."L_CARREGA_CARTAO_PREPAGO" ENABLE;
   for each row
 declare
   
-  /*ATENCAO, como este trigger era muito simples fiz um segundo de natureza 
-  semelhante chamado o_trig_2021136600_2*/
-  
 begin
 
---Verifica o tipo de chamada e adiciona na tabela respetiva a entrada
---o trigger � after para se puder ir buscar o id correto
   if (upper(:new.tipo) = 'VOZ') then
     insert into chamada_voz values (:new.id_chamada, sysdate - 0.1, sysdate + 1);
     
@@ -148,7 +131,6 @@ begin
     insert into outras_chamadas values (:new.id_chamada, sysdate - 0.1, sysdate + 1);
     
   else
---nao insere nada caso o tipo seja errado 
     raise_application_error(-20572, 'Tipo da chamada desconhecido');
     
   end if;
@@ -164,12 +146,8 @@ ALTER TRIGGER "SQL_Project"."O_TRIG_2021136600_1" ENABLE;
   for each row
 declare
   
-  /*ATENCAO, como este trigger era muito simples fiz um segundo de natureza 
-  semelhante chamado o_trig_2021136600_1*/
   
 begin
---Verifica o tipo de chamada e adiciona na tabela respetiva a entrada
---o trigger � after para se puder ir buscar o id correto
   if(INSTR(:new.nome, 'PPP ') > 0) then
     insert into plano_pospago_plafond(id_plano) values (:new.id_plano);
     
@@ -177,7 +155,6 @@ begin
     insert into plano_prepago(id_plano) values (:new.id_plano);
     
   else
---nao insere nada caso o tipo seja errado   
     raise_application_error(-20571, 'Tipo da plano desconhecido');
     
   end if;
@@ -192,7 +169,6 @@ ALTER TRIGGER "SQL_Project"."O_TRIG_2021136600_2" ENABLE;
 after insert on cancelamento
 for each row
 begin
-    --atualiza o atributo valido do contrato para 1
     update contrato set valido = 1 where id_contrato = :new.id_contrato;
 end;
 /
@@ -205,11 +181,9 @@ ALTER TRIGGER "SQL_Project"."O_TRIG_2021139149" ENABLE;
 AFTER INSERT ON carregamento
 FOR EACH ROW
 BEGIN
-  --este trigger atualiza o saldo do telemovel cada vez que � efetuado um carregamento
-  
   
   UPDATE num_telefone num
-  SET saldo = saldo + :new.valor --adiciona o valor do carregamento ao saldo atual
+  SET saldo = saldo + :new.valor
   WHERE num.numero = :new.numero;
 END;
 /

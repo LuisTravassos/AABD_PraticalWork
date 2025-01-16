@@ -8,10 +8,9 @@ set define off;
 
   CREATE OR REPLACE PROCEDURE "SQL_Project"."A_EMITE_FATURA" (
     nTelefone varchar2,
-    anoMes varchar2 --formato "yyyy-mm"
+    anoMes varchar2 
 ) is
 
---cursor responsavel por verificar carregamentos
   cursor c1 is
     select 
       carr.valor as carrValor
@@ -22,7 +21,6 @@ set define off;
     where nTelefone = nt.numero
       and carr.data_carreg between add_months(to_date(anoMes, 'YYYY-MM'), -1) and to_date(anoMes, 'YYYY-MM');  
 
---cursor para chamadas      
   cursor c2 is
     select
       ch.id_chamada as chId
@@ -39,7 +37,6 @@ set define off;
       or och.data_inicio between add_months(to_date(anoMes, 'YYYY-MM'), -1) and to_date(anoMes, 'YYYY-MM')
       or chs.data_envio between add_months(to_date(anoMes, 'YYYY-MM'), -1) and to_date(anoMes, 'YYYY-MM'));
 
---variaveis
   dados boolean := false;
   helper number;
   custoChamadasTotal float := 0;
@@ -48,7 +45,6 @@ set define off;
   custoTotal float := 0;
   
 begin
-  --verificar se numero existe
   select count(numero) 
   into helper
   from num_telefone
@@ -66,23 +62,19 @@ begin
     nt.numero = nTelefone
     and ct.valido = 1;
     
-  --verifica se existe um contrato ativo anexado ao numero  
   if(helper <= 0) then
     raise_application_error(-20511, 'Numero '||nTelefone||' inativo');
   end if;
   
-  --custo Total das chamadas usando a funcao B
   for i in c2 loop
     dados := true;
     custoChamadasTotal := custoChamadasTotal + b_custo_da_chamada(i.chId);
   end loop;
   
-  --valor total dos carregamentos para a data selecionada
   for i in c1 loop
     custoCarregamentosTotal := custoCarregamentosTotal + i.carrValor;
   end loop;
   
-  --valor do plano contratado
   select 
     pps.VALOR_SERVICO into custoPlano
     
@@ -102,15 +94,12 @@ begin
     and ta.ESTADO = 1
     and pps.ESTADO = 1;
     
-  --soma de valores  
   custoTotal := custoPlano + custoCarregamentosTotal + custoChamadasTotal;
   
-  --periodo de tempo mal feito
   if not REGEXP_LIKE(anoMes, '^\d{4}-\d{2}$') then
     raise_application_error(-20512, 'Periodo yyyy-mm invalido');
   end if;
   
-  --periodo de tempo superior ao presente
   if(to_date(anoMes, 'yyyy-mm') > sysdate) then
     raise_application_error(-20513, 'Periodo ainda nao terminado');
   end if;
@@ -122,11 +111,9 @@ begin
     and data_fim = to_date(anoMes, 'YYYY-MM')
     and VALORTOTAL = custoTotal;
   
-  --verifica se dados de fatura ja existem  
   if(helper > 0) then
     raise_application_error(-20510, 'Fatura j� foi emitida');
   else
-    --insersao no tabela fatura
     insert into fatura values (custoChamadasTotal, 
                               custoCarregamentosTotal, 
                               custoPlano, 
@@ -194,7 +181,6 @@ IS
   valorunid float;
   saldo number;
 BEGIN
-    -- Verifica se o numero de origem existe
     SELECT count(nt.numero) INTO verificacao
     FROM  num_telefone nt
     WHERE nt.numero = num_de_origem;
@@ -203,7 +189,6 @@ BEGIN
       raise NumInexistente;
     END IF;
     
-    -- Verifica se o numero de destino � valido
     SELECT count(nt.numero) INTO verificacao
     FROM  num_telefone nt
     WHERE nt.numero = num_de_destino;
@@ -212,7 +197,6 @@ BEGIN
       raise NumInvalido;
     END IF;
     
-    -- Verifica se numero de origem est� inativo
     FOR r IN c1
     LOOP
       SELECT count(cm.id_contrato) INTO verificacao
@@ -224,8 +208,7 @@ BEGIN
         raise NumInativo;
       END IF;
     END LOOP;
-    
-    --Verificar que plano tem o numero de origem  
+     
     for i IN c4
     loop
       for j in c2
@@ -251,19 +234,15 @@ BEGIN
       end if;
     end loop;
     
-    -- ver quanto o numero de origem ja gastou em sms
     select sms_gastos into smsGastos
     from num_telefone
     where numero = num_de_origem;
     
-    -- consoante o plano que tiver vai ver se tem requisitos para enviar o sms
     if pprepago then
       if valor < smsGastos then
          envia := true;
          dbms_output.put_line('Plano pre pago com ' ||valor|| ' ja gastou ' ||smsGastos);
       else
-        -- ver valorunidade do tarifario
-          --se saldo < valorunidade lan�a excecao senao envia
           select t.unidade, t.valorunidade, nt.saldo into unid, valorunid, saldo
           from tarifario t
               join contrato ct on t.id_tarifario = ct.id_tarifario
@@ -286,8 +265,6 @@ BEGIN
          envia := true;
          dbms_output.put_line('Plano pre pago com ' ||valor|| ' ja gastou ' ||smsGastos);
       else
-        -- ver valorunidade do tarifario
-          --se saldo < valorunidade lan�a excecao senao envia
           select t.unidade, t.valorunidade, nt.saldo into unid, valorunid, saldo
           from tarifario t
               join contrato ct on t.id_tarifario = ct.id_tarifario
@@ -334,10 +311,8 @@ BEGIN
           end if;
     end if;
     
-    --vai buscar o ultimo id introduzido na tabela chamadas
     select max(id_chamada) into maxIDcha
     from chamada;
-    -- regista a mensagem na tabela sms
     if envia then
       insert into chamada values(maxIDcha + 1, num_de_origem, num_de_destino, 'SMS');
       insert into sms values(maxIDcha + 1, sysdate, sysdate, MENSAGEM);
@@ -371,10 +346,6 @@ set define off;
   num_de_destino varchar2
 ) is
 
-/*Existe a declara�ao de duas sequencias que podem ser necessario
-ser lan�adas/relan�adas*/
-
---inicia os erros, ir� ser lan�ada a fun��o D so para os erros
   NumInexistente exception;
     pragma exception_init (NumInexistente, -20501);
   NumInvalido exception;
@@ -386,7 +357,6 @@ ser lan�adas/relan�adas*/
   NumIndefinido exception;
     pragma exception_init (NumIndefinido, -20515);
   
---cursor para retornar tipo do tarifario e garantir que estao tudo nos conformes
   cursor c1 is
     select
       ta.tipo as taTipo 
@@ -406,26 +376,22 @@ ser lan�adas/relan�adas*/
     group by 
       ta.tipo;
 
---variaveis      
   helper varchar2(150);
   dados boolean := false;
   
 begin
---verificar erros
   helper := D_TIPO_DE_CHAMADA_VOZ(num_de_origem);
   helper := D_TIPO_DE_CHAMADA_VOZ(num_de_destino);
   
   for i in c1 loop
     dados := true;
     
-    --insere dados no tabela chamada
     insert into chamada values(
       SeqIdChamada.nextval, 
       num_de_origem, 
       num_de_destino, 
       i.taTipo);
     
-    --insere dados na tabela eventos  
     insert into eventos values(
       SeqIdEvento.nextval,
       SeqIdChamada.currval,
@@ -435,7 +401,6 @@ begin
     
   end loop;
   
-  --se nao houver dados no cursor
   if(dados = false) then
     raise_application_error(-20532, 'Tarifario nao aplicavel com Plano contrato');
   end if;
@@ -451,7 +416,7 @@ set define off;
     nif1 VARCHAR, 
     nome1 VARCHAR, 
     plano VARCHAR, 
-    tarifario VARCHAR, --necessario devido � nossa tabela contrato 
+    tarifario VARCHAR,
     periodo_meses NUMBER
 ) IS
     
@@ -491,7 +456,6 @@ set define off;
     idpp number;
 BEGIN
 
-    -- Verifica se o cliente � v�lido
     select count(id_cliente), c.nome, c.id_cliente into verificacao, nomeCli, idCli
     from cliente c
     where c.nif = nif1 and upper(c.nome) = upper(nome1)
@@ -501,7 +465,6 @@ BEGIN
       raise nifCliente;
     end if;
     
-    -- Verifica se o plano � v�lido
     
     for r in c1 loop
       dados := true;
@@ -515,7 +478,6 @@ BEGIN
       raise planoInexis;
     end if;
     
-    -- verifica se tarifario � v�lido
     dados := false;
     for k in c2 loop
       dados := true;
@@ -526,27 +488,22 @@ BEGIN
       raise tarifarioInv;
     end if;
     
-    -- Verifica se o per�odo � v�lido
     if periodo_meses <= 0 then
       raise periodoInvalido;
     end if;
     
-    -- Gera um novo n�mero de telefone n�o atribu�do
     select max(numero) into newNumero
     from num_telefone;
     newNumero := newNumero + 1;
     
-    -- Gera novo Id contrato
     select max(id_contrato) into newIDContrato
     from contrato;
     newIDContrato := newIDContrato + 1;
     
-    --Gera novo Id chamada
     select max(id_chamada) into newIdChamada
     from chamada;
     newIdChamada := newIdChamada + 1;
     
-    -- Insere o novo contrato na tabela de contratos
     dbms_output.put_line('Id contrato: ' || newIDContrato);
     dbms_output.put_line('ID Tarifario: ' || idtarif);
     dbms_output.put_line('Novo numero: ' || newNumero);
@@ -556,15 +513,12 @@ BEGIN
     insert into num_telefone values(newNumero,0,0,0);
     insert into contrato values(newIDContrato,idtarif ,newNumero,idCli,periodo_meses,sysdate,1);
     insert into associado values(newIDContrato, idpp);
-    -- Regista o in�cio do per�odo de fatura��o
     
-    -- Envia o SMS de boas-vindas
     msgBoasVindas := 'Bem vindo '|| nomeCli;
     dbms_output.put_line('Mensagem: ' ||msgBoasVindas);
     
     insert into chamada values(newIdChamada,393549708,newNumero, 'SMS');
     insert into sms values(newIdChamada, sysdate, sysdate, msgBoasVindas);
-    -- Tratamento das exce��es
     EXCEPTION
       
       when nifCliente then
@@ -603,7 +557,6 @@ set define off;
   NumIndefinido exception;
     pragma exception_init (NumIndefinido, -20515);
 
---cursor com o objetivo de investigar as specs do grupo
   cursor c1 is
     select
       count(ad.id_grupo) as adIdGroup,
@@ -618,20 +571,17 @@ set define off;
     group by
       gr.n_membros;
 
---variaveis  
   helper1 varchar2(150);
   helper2 number;
   dados boolean := false;
   
 begin
---usar a funcao D para lan�as as exce�oes
   helper1 := D_TIPO_DE_CHAMADA_VOZ(numTele);
   
   select count(id_grupo) into helper2
   from grupo
   where id_grupo = idGrupo;
 
---verificar se o grupo existe 
   if(helper2 <= 0) then
     raise_application_error(-20580, 'Nao existe um grupo com id' + idGrupo);
   end if;
@@ -643,15 +593,13 @@ begin
   where id_grupo = idGrupo
   and numero = numTele;
 
---verificar se o numero ja pertence ao grupo  
   if(helper2 > 0) then
     raise_application_error(-20583, 'Numero ja pertece a esse grupo');
   end if;
   
   for i in c1 loop
     dados := true;
-
---se houver espa�o para adicionar o numero adiciona-se    
+  
     if (i.adIdGroup < i.grMembros) then
       insert into adere values(idGrupo, numTele);
     else
@@ -660,7 +608,6 @@ begin
     
   end loop;
 
---o grupo esta desativado 
   if(dados = false) then
     raise_application_error(-20581, 'Grupo esta com estado invalido');
   end if;
@@ -697,7 +644,6 @@ is
   newIdCarr number;
   idplano number;
 begin
-    -- verificar se numero existe
     for r in c1 loop
       dados := true;
     end loop;
@@ -706,7 +652,6 @@ begin
       raise_application_error(-20501, 'Numero de telefone ' ||numer|| ' inexistente.');
     end if;
     
-    -- verificar se possui plano pre pago
     for k in c2 loop
       for j in c3 loop
         if k.idpps = j.idpre then
@@ -720,7 +665,6 @@ begin
       raise_application_error(-20522, 'Numero de telefone ' ||numer|| ' n�o possui plano pre pago.');
     end if;
     
-    -- efetuar carregamento 
     select max(id_carregamento) into newIdCarr
     from carregamento;
     
@@ -739,10 +683,9 @@ set define off;
   p_motivo cancelamento.motivo%TYPE,
   p_valor_multa cancelamento.valor_multa%TYPE)
 IS
-  num_contratos NUMBER; --este procedimento preenche a tabela de cancelamentos
+  num_contratos NUMBER;
 BEGIN
   
-  --verifica se esse contrato existe
   select count(*) into num_contratos
   from contrato ct
   where ct.id_contrato = p_id_contrato;
@@ -752,7 +695,6 @@ BEGIN
       RAISE_APPLICATION_ERROR(-20509,'Contrato inexistente.');
   end if;
 
-  --preenche a tabela cancelamento
   INSERT INTO cancelamento(id_cancelamento, id_contrato, data_cancel, motivo, valor_multa)
   VALUES(cancelamento_seq.NEXTVAL, p_id_contrato, SYSDATE, p_motivo, p_valor_multa);
 

@@ -9,8 +9,6 @@
   idChamada number
 ) return float is
 
-/*Cursor para receber tudo associado � chamada,
-so deve retornar uma linha de resultados*/
   cursor c1 is
     select 
       ct.id_contrato as ctID,
@@ -43,12 +41,11 @@ so deve retornar uma linha de resultados*/
       join aplicavel ap on ta.ID_TARIFARIO = ap.ID_TARIFARIO
       and pps.ID_PLANO = ap.ID_PLANO
       
-    where --verificar se o numero est� a 100%
+    where
       ch.id_chamada = idChamada
       and ta.ESTADO = 1
       and pps.ESTADO = 1;
       
---cursor responsavel por verificar carregamentos
   cursor c2 is
     select 
       carr.id_carregamento as carrId,
@@ -61,7 +58,6 @@ so deve retornar uma linha de resultados*/
     where
       ch.id_chamada = idChamada;
 
---variaveis
   helper number;
   duracao number;
   dados boolean := false;
@@ -76,7 +72,6 @@ so deve retornar uma linha de resultados*/
   nDays number;
   
 begin
---verificar se chamada existe
   select count(id_chamada) 
   into helper
   from chamada
@@ -86,12 +81,9 @@ begin
     raise_application_error(-20514, 'Inv�lido Identificador de chamada: '||idChamada);
   end if;
  
- --inicio loop c1
   for i in c1 loop
     dados := true;
 
---verifica se a chamada � do tipo do tarifario, se nao for acusa erro
---calcula o valor a pagar pelo tarifario, valor*minutos
     if(upper(i.taTipo) = upper(i.chTipo)) then
 
       if (upper(i.chTipo) = 'VOZ') then
@@ -116,10 +108,8 @@ begin
       raise_application_error(-20531, 'Contrato: '|| i.ctID || ' nao possui um tarifario compativel com a chamada');
     end if;
 
-/*baseado no tipo de plano retorna valores 
-diferentes baseados no enunciado*/
     if(INSTR(i.ppsNome, 'PPS ')>0) then
-      total := tarifarioValue; --valor do tarifario*
+      total := tarifarioValue;
       
     elsif(INSTR(i.ppsNome, 'PPP ')>0) then
       select minutos, sms 
@@ -127,9 +117,8 @@ diferentes baseados no enunciado*/
       from PLANO_POSPAGO_PLAFOND
       where id_plano = i.ppsId;
       
---se o cliente tiver ultrapassado os seus minutos/sms paga o valor do tarifario
       if(i.ntMin > planosMin or i.ntSms > planosSms) then
-        total := tarifarioValue; --valor do tarifario*
+        total := tarifarioValue;
       else
         total:= 0;
       end if;
@@ -141,9 +130,6 @@ diferentes baseados no enunciado*/
       where id_plano = i.ppsId;
       
       for j in c2 loop
-/*se o cliente tiver feito um carregamento superior ou igual ao valor do plano
-num periodo de tempo menor que o do plano e nao tiver ultrapassado o valor de 
-chamadas/sms no meio tempo paga nada, contrario paga o tarifario*/
 
         if ((sysdate-j.carrData < preTime) 
           AND (i.ppsValSer <= j.carrValor) 
@@ -211,7 +197,6 @@ RETURN NUMBER IS
   valor number;
 
 BEGIN
-    -- verifica se numero de origem existe
     select count(nt.numero) into verificacao
     from  num_telefone nt
     where nt.numero = tel_origem;
@@ -220,7 +205,6 @@ BEGIN
       RAISE_APPLICATION_ERROR(-20501, 'Numero de telefone ' ||tel_origem|| ' inexistente.');
     end if;
     
-    -- verifica se numero de destino � valido
     select count(nt.numero) into verificacao
     from  num_telefone nt
     where nt.numero = tel_destino;
@@ -228,7 +212,6 @@ BEGIN
     if verificacao = 0 then
       RAISE_APPLICATION_ERROR(-20502, 'Invalido numero de telefone');
     end if;
-    -- verifica se o numero de destino est� inativo
     for r in c1
     loop
       select count(cm.id_contrato) into verificacao
@@ -240,8 +223,6 @@ BEGIN
         RAISE_APPLICATION_ERROR(-20511, 'O numero ' ||tel_destino|| ' est� inativo');
       end if;
     end loop;
-    
-    -- verificar que plano/tarifario tem o numero de origem
     
     for i IN c4
     loop
@@ -268,20 +249,15 @@ BEGIN
       end if;
     end loop;
     
-    -- ver quanto o numero de origem ja gastou em minutos de chamadas
     select min_gastos into minGastos
     from num_telefone
     where numero = tel_origem;
     
-    -- consoante o plano que tiver vai ver se tem ainda minutos de chamadas para gastar
-    -- ou se tem de ser aplicado valor do tarif�rio
     if pprepago then
       if minGastos < valor then
          preco_pagar := 0;
          dbms_output.put_line('Plano pre pago com ' ||valor|| ' minutos ja gastou ' ||minGastos);
       else
-        -- ver valorunidade do tarifario
-          --se saldo < valorunidade lan�a excecao senao envia
           select t.unidade, t.valorunidade, nt.saldo into unid, valorunid, saldo
           from tarifario t
               join contrato ct on t.id_tarifario = ct.id_tarifario
@@ -305,8 +281,6 @@ BEGIN
          preco_pagar := 0;
          dbms_output.put_line('Plano pos pago plafond com ' ||valor|| ' minutos ja gastou ' ||minGastos);
       else
-        -- ver valorunidade do tarifario
-          --se saldo < valorunidade lan�a excecao senao envia
           select t.unidade, t.valorunidade, nt.saldo into unid, valorunid, saldo
           from tarifario t
               join contrato ct on t.id_tarifario = ct.id_tarifario
@@ -370,11 +344,9 @@ END;
   CREATE OR REPLACE FUNCTION "SQL_Project"."D_TIPO_DE_CHAMADA_VOZ" (
   num_telefone varchar2
 ) return varchar2 is
---variaveis
   helper number;
   
 begin
---verifica se existe o numero
   select count(numero) into helper
   from num_telefone
   where NUMERO = num_telefone;
@@ -383,12 +355,10 @@ begin
     raise_application_error(-20501, 'N�mero de telefone '||num_telefone||' inexistente.');
   end if;
   
---verifica se � so composto por numeros  
   if( not REGEXP_LIKE(num_telefone, '^[0-9]+$')) then
     raise_application_error(-20502, ' Invalido N�mero de telefone '||num_telefone);
   end if;
   
---verifica se existe um contrato ativo anexado ao numero  
   select count(nt.numero) into helper
   from 
     num_telefone nt
@@ -401,7 +371,6 @@ begin
     raise_application_error(-20511, 'Numero '||num_telefone||' inativo');
   end if;
   
---verifica se o tarifario do numero esta ativo  
   select count(nt.numero) into helper
   from 
     num_telefone nt
@@ -416,7 +385,6 @@ begin
     raise_application_error(-20505, 'Tarif�rio n�o ativo.');
   end if;
 
---retorna o tipo  
   if(length(num_telefone) = 9) then
     if(num_telefone like '2%') then
       return 'Fixo Nacional';
@@ -444,7 +412,6 @@ begin
     
   end if;
 
---nao reconheceu o tipo  
   raise_application_error(-20515, 'Gama de numeros indefinido.');
 end;
 
@@ -459,12 +426,10 @@ IS
   v_numero_normalizado VARCHAR(255); 
 BEGIN
 
-  --Remover espa�os brancos e indicadores internacionais
   v_numero_normalizado := REGEXP_REPLACE(num_telefone, '[[:space:]-]', '');
 
-  -- ver se o numero tem o indicativo portugues
   IF SUBSTR(v_numero_normalizado, 1, 5) = '00351' THEN
-    -- remover o indicativo portugues
+
     v_numero_normalizado := SUBSTR(v_numero_normalizado, 6);
   END IF;
 
@@ -485,7 +450,7 @@ IS
   saldo NUMBER;
   tipo_rede VARCHAR2(100);
 BEGIN
-  -- Verificar se o n�mero de origem existe
+
   SELECT COUNT(*) INTO num_telef
   FROM contrato ct
   WHERE ct.numero = num_de_origem;
@@ -494,7 +459,6 @@ BEGIN
     RAISE_APPLICATION_ERROR(-20502, 'N�mero de telefone inv�lido.');
   END IF;
 
-  -- Verificar o saldo do n�mero de origem
   SELECT num.saldo INTO saldo
   FROM num_telefone num
   JOIN contrato ct ON num.numero = ct.numero
@@ -522,7 +486,6 @@ IS
   v_minutos NUMBER;
   v_sms NUMBER;
 BEGIN
-  -- Verifica se o numero e valido
   SELECT COUNT(*) INTO v_numero
   FROM num_telefone num
   WHERE num.numero = p_numero; 
@@ -531,16 +494,14 @@ BEGIN
     RAISE_APPLICATION_ERROR(-20502, 'Numero de telefone invalido');
   END IF;
 
-  --caso o tipo seja valor
   IF UPPER(tipo) = UPPER('valor') THEN
     SELECT num.saldo INTO v_saldo
     FROM num_telefone num
     WHERE num.numero = p_numero;
     RETURN v_saldo;
-  --END IF;
 
 
-  --caso seja saldo voz
+
   ELSIF UPPER(tipo) = UPPER('voz') THEN
     SELECT ppp.minutos INTO v_minutos
     FROM plano_pospago_plafond ppp
@@ -550,9 +511,8 @@ BEGIN
     WHERE ct.numero = p_numero;
 
     RETURN v_minutos;
-  --END IF;
 
-  --caso seja saldo mensagens
+
   ELSIF UPPER(tipo) = UPPER('sms') THEN 
     SELECT ppp.sms INTO v_sms
     FROM plano_pospago_plafond ppp
@@ -579,7 +539,6 @@ END;
   associar varchar2
 ) return varchar2 is
   
---variaveis  
   result varchar2(50) := 'false';
   helper number;
   
@@ -589,7 +548,6 @@ begin
   from tarifario
   where ID_TARIFARIO = idTarifario;
 
---verifica se existe tarifario  
   if (helper <= 0) then
     raise_application_error(-20503, 'Tarif�rio inexistente.');
   end if;
@@ -598,7 +556,6 @@ begin
   from PLANO_POSPAGO_SIMPLES
   where ID_PLANO = idPlano;
 
---verifica se existe plano 
   if (helper <= 0) then
     raise_application_error(-20516 ,'Plano inexistente.');
   end if;
@@ -608,19 +565,15 @@ begin
   where ID_PLANO = idPlano
   and ID_TARIFARIO = idTarifario;
 
---se escolher associar o plano e o tarifario e estes nao o forem associa
---depois retorna true
   if ((upper(associar) like 'S%') and helper <= 0) then
     insert into aplicavel(ID_PLANO, ID_TARIFARIO) values (idPlano, idTarifario);
     result := 'associados -> true';
-
---se estiverem associados retorna true    
+ 
   elsif (helper > 0) then
     result := 'true';
     
   end if;
 
---dps de testar as alternativas so resta retornar false 
   return result;
 end;
 
@@ -640,7 +593,6 @@ return number is
       group by nt.min_gastos;
     
 begin
-    -- verificar se numero introduzido � valido
     for r in c1 loop
       if r.counter = 0 then
         raise_application_error(-20501, 'Numero de telefone ' ||numer|| ' inexistente.');
@@ -661,7 +613,7 @@ end;
   p_id_contrato NUMBER,
   p_mes DATE
   )
-RETURN NUMBER --Esta funcao ira calcular o valor final das chamadas efetuadas por um contrato com campanha  em determinado mes.
+RETURN NUMBER 
 IS
   v_id_contrato NUMBER;
   v_id_chamada NUMBER;
@@ -669,7 +621,6 @@ IS
   v_preco_total NUMBER := 0;
   v_desc_voz NUMBER;
   
-  --vai buscar todas as chamadas efetuadas no mes passado por agumento
   cursor c1 is 
   select cvz.id_chamada
   from chamada_voz cvz
@@ -681,7 +632,6 @@ IS
   
 BEGIN
 
-  --verifica se o contrato existe
   select count(id_contrato) into v_id_contrato
   from contrato ct
   where id_contrato = p_id_contrato;
@@ -705,7 +655,6 @@ BEGIN
       RAISE_APPLICATION_ERROR(-10522, 'Numero do contrato nao pertence a nehuma campanha');
   end if;
   
-  --guardar o valor do desconto
   select cam.desconto_voz into  v_desc_voz
   from contrato ct
   join tarifario tr on ct.ID_TARIFARIO = tr.ID_TARIFARIO
@@ -717,16 +666,15 @@ BEGIN
   and upper(tr.tipo) = upper('VOZ');
   
   
-  --itera pelo cursor pra somar os custos
   OPEN c1;
     LOOP
     FETCH c1 INTO v_id_chamada;
     
     EXIT WHEN c1%NOTFOUND;
     
-    v_preco_chamada := b_custo_da_chamada(v_id_chamada) - v_desc_voz; -- Chamada da fun��o b_custo_da_chamada
-    
-    v_preco_total := v_preco_total + v_preco_chamada; -- Acumular o pre�o da chamada
+    v_preco_chamada := b_custo_da_chamada(v_id_chamada) - v_desc_voz; 
+
+    v_preco_total := v_preco_total + v_preco_chamada;
     
     END LOOP;
   
