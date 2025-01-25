@@ -1,6 +1,6 @@
 # Database Schema Description
 
-This schema represents a telecommunications service management system, detailing the relationships and attributes of various entities. Below is a professional description of each table and its respective fields:
+This schema represents a telecommunications service management system, detailing the relationships and attributes of various entities. Below is a description of each table and its respective fields:
 
 ---
 
@@ -195,7 +195,3 @@ This schema represents a telecommunications service management system, detailing
 - **NOME** (VARCHAR2(100 BYTE)): Client's name.
 - **DATA_INI** (DATE): Invoice period start date.
 - **DATA_FIM** (DATE): Invoice period end date.
-
----
-
-This schema ensures efficient data organization and integrity within the telecommunications service system.

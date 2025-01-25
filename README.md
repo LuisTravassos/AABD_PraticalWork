@@ -10,6 +10,12 @@ This project is designed to model and manage key aspects of a telecommunications
 
 ---
 
+## Language Note
+
+**Important**: Some parts of the code and documentation are written in **Portuguese (Portugal)** as the project was originally developed in that language. However, the repository is organized to be intuitive, and additional explanations are provided in English to ensure broader accessibility.
+
+---
+
 ## Database Diagram
 
 Below is the database schema diagram for the project:
@@ -45,7 +51,7 @@ Contains high-level information and instructions:
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). Feel free to use, modify, and distribute this project.
+This project is licensed under the [MIT License](/LICENSE). Feel free to use, modify, and distribute this project.
 
 ---
 
@@ -53,4 +59,4 @@ This project is licensed under the [MIT License](LICENSE). Feel free to use, mod
 
 For questions or suggestions, please contact:
 - **Email**: henriquetravassos03@outlook.com
-- **GitHub**: [Your GitHub Profile](https://github.com/LuisTravassos)
+- **GitHub**: [Luís Travassos](https://github.com/LuisTravassos)

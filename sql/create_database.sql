@@ -1,9 +1,3 @@
-/*==============================================================*/
-/* DBMS name:      ORACLE Version 11g                           */
-/* Created on:     31/03/2023 18:48:15                          */
-/*==============================================================*/
-
-
 drop table ADERE cascade constraints;
 
 drop table ANEXADO cascade constraints;
