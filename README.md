@@ -43,20 +43,8 @@ Houses all the SQL scripts necessary to create and manage the database:
 - **`triggers_code.sql`**: Defines database triggers for automated actions.
 - **`views_code.sql`**: Scripts for creating database views that simplify querying complex data.
 
-### **3. Outputs (`out/`)**
-Contains high-level information and instructions:
-- **`README.md`**: This document, serving as the entry point for the repository.
-
 ---
 
 ## License
 
 This project is licensed under the [MIT License](/LICENSE). Feel free to use, modify, and distribute this project.
-
----
-
-## Contact
-
-For questions or suggestions, please contact:
-- **Email**: henriquetravassos03@outlook.com
-- **GitHub**: [Luís Travassos](https://github.com/LuisTravassos)
