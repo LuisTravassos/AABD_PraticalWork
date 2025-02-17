@@ -1,12 +1,20 @@
-# Telecommunications Database Project
+# Telecommunications Database Project  
 
-Welcome to the **Telecommunications Database Project**! This repository contains all the necessary files and documentation for understanding, implementing, and managing a robust telecommunications database system. Below, you'll find an overview of the project structure, its purpose, and instructions for navigation.
+Welcome to the **Telecommunications Database Project**! This repository hosts a comprehensive Oracle SQL database solution for managing telecom services, including client contracts, billing, calls, SMS, and marketing campaigns.  
 
 ---
 
-## Project Overview
+## Key Features  
+- **Oracle SQL Implementation**: Leveraged advanced Oracle SQL features such as PL/SQL stored procedures, triggers, and materialized views.  
+- **Data Integrity**: Enforced via constraints (PK, FK, UNIQUE), normalization, and transactional error handling.  
+- **Scalability**: Optimized with indexing, partitioning strategies, and modular code design.  
 
-This project is designed to model and manage key aspects of a telecommunications service, including clients, contracts, billing, calls, SMS, and campaigns. The database is structured to ensure data integrity, scalability, and ease of use, leveraging mechanisms like triggers, stored procedures, and views for efficient data management.
+---
+
+## Technical Highlights  
+- **ER Modeling**: Designed entity-relationship diagrams to map business logic into relational tables.  
+- **PL/SQL Automation**: Developed triggers for real-time data validation and procedures for batch operations.  
+- **Performance Tuning**: Applied Oracle-specific indexing and query optimization techniques.  
 
 ---
 
