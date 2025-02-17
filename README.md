@@ -18,9 +18,8 @@ Welcome to the **Telecommunications Database Project**! This repository hosts a 
 
 ---
 
-## Language Note
-
-**Important**: Some parts of the code and documentation are written in **Portuguese (Portugal)** as the project was originally developed in that language. However, the repository is organized to be intuitive, and additional explanations are provided in English to ensure broader accessibility.
+## Language Note  
+The codebase and primary documentation are written in **Portuguese (Portugal)**. Key technical descriptions are provided in English for accessibility.  
 
 ---
 
